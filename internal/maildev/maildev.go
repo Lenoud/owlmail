@@ -1,212 +1,10 @@
+// Package maildev provides MailDev API compatibility layer.
+//
+// This package contains documentation for MailDev-compatible API routes.
+// The actual environment variable handling has been moved to the internal/config package.
+//
+// For environment variable compatibility mapping, see internal/config/config.go.
 package maildev
-
-import (
-	"os"
-	"strconv"
-)
-
-// ============================================================================
-// MailDev Compatibility Layer
-// ============================================================================
-//
-// This file contains all MailDev compatibility-related code, including:
-// 1. Environment variable compatibility layer: provides mapping from MailDev
-//    environment variables to OwlMail environment variables
-// 2. API route compatibility layer: provides fully compatible API routes with MailDev
-//
-// Environment Variable Compatibility Layer:
-// Prioritizes MailDev environment variables, falls back to OwlMail environment variables
-// if MailDev variables are not present
-//
-// Supported MailDev environment variable mappings:
-//   - MAILDEV_SMTP_PORT → OWLMAIL_SMTP_PORT
-//   - MAILDEV_IP → OWLMAIL_SMTP_HOST
-//   - MAILDEV_MAIL_DIRECTORY → OWLMAIL_MAIL_DIR
-//   - MAILDEV_WEB_PORT → OWLMAIL_WEB_PORT
-//   - MAILDEV_WEB_IP → OWLMAIL_WEB_HOST
-//   - MAILDEV_WEB_USER → OWLMAIL_WEB_USER
-//   - MAILDEV_WEB_PASS → OWLMAIL_WEB_PASSWORD
-//   - MAILDEV_HTTPS → OWLMAIL_HTTPS_ENABLED
-//   - MAILDEV_HTTPS_CERT → OWLMAIL_HTTPS_CERT
-//   - MAILDEV_HTTPS_KEY → OWLMAIL_HTTPS_KEY
-//   - MAILDEV_OUTGOING_HOST → OWLMAIL_OUTGOING_HOST
-//   - MAILDEV_OUTGOING_PORT → OWLMAIL_OUTGOING_PORT
-//   - MAILDEV_OUTGOING_USER → OWLMAIL_OUTGOING_USER
-//   - MAILDEV_OUTGOING_PASS → OWLMAIL_OUTGOING_PASSWORD
-//   - MAILDEV_OUTGOING_SECURE → OWLMAIL_OUTGOING_SECURE
-//   - MAILDEV_AUTO_RELAY → OWLMAIL_AUTO_RELAY
-//   - MAILDEV_AUTO_RELAY_ADDR → OWLMAIL_AUTO_RELAY_ADDR
-//   - MAILDEV_AUTO_RELAY_RULES → OWLMAIL_AUTO_RELAY_RULES
-//   - MAILDEV_INCOMING_USER → OWLMAIL_SMTP_USER
-//   - MAILDEV_INCOMING_PASS → OWLMAIL_SMTP_PASSWORD
-//   - MAILDEV_INCOMING_SECURE → OWLMAIL_TLS_ENABLED
-//   - MAILDEV_INCOMING_CERT → OWLMAIL_TLS_CERT
-//   - MAILDEV_INCOMING_KEY → OWLMAIL_TLS_KEY
-//
-// Log level support:
-//   - MAILDEV_VERBOSE → verbose
-//   - MAILDEV_SILENT → silent
-//   - OWLMAIL_LOG_LEVEL → normal/verbose/silent
-
-// getEnvStringWithMailDevCompat gets environment variable value, prioritizing MailDev
-// environment variables, falling back to OwlMail environment variables if not present
-func getEnvStringWithMailDevCompat(maildevKey, owlmailKey, defaultValue string) string {
-	// Check MailDev environment variable first
-	if value := os.Getenv(maildevKey); value != "" {
-		return value
-	}
-	// If MailDev environment variable is not present, use OwlMail environment variable
-	if value := os.Getenv(owlmailKey); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-// getEnvIntWithMailDevCompat gets environment variable integer value, prioritizing MailDev
-// environment variables
-func getEnvIntWithMailDevCompat(maildevKey, owlmailKey string, defaultValue int) int {
-	// Check MailDev environment variable first
-	if value := os.Getenv(maildevKey); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	// If MailDev environment variable is not present, use OwlMail environment variable
-	if value := os.Getenv(owlmailKey); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-// getEnvBoolWithMailDevCompat gets environment variable boolean value, prioritizing MailDev
-// environment variables
-func getEnvBoolWithMailDevCompat(maildevKey, owlmailKey string, defaultValue bool) bool {
-	// Check MailDev environment variable first
-	if value := os.Getenv(maildevKey); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
-	}
-	// If MailDev environment variable is not present, use OwlMail environment variable
-	if value := os.Getenv(owlmailKey); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
-	}
-	return defaultValue
-}
-
-// MailDev environment variable mapping table
-// Mapping relationship: MAILDEV_* → OWLMAIL_*
-var maildevEnvMapping = map[string]string{
-	// SMTP server configuration
-	"MAILDEV_SMTP_PORT":      "OWLMAIL_SMTP_PORT",
-	"MAILDEV_IP":             "OWLMAIL_SMTP_HOST",
-	"MAILDEV_MAIL_DIRECTORY": "OWLMAIL_MAIL_DIR",
-
-	// Web API configuration
-	"MAILDEV_WEB_PORT": "OWLMAIL_WEB_PORT",
-	"MAILDEV_WEB_IP":   "OWLMAIL_WEB_HOST",
-	"MAILDEV_WEB_USER": "OWLMAIL_WEB_USER",
-	"MAILDEV_WEB_PASS": "OWLMAIL_WEB_PASSWORD",
-
-	// HTTPS configuration
-	"MAILDEV_HTTPS":      "OWLMAIL_HTTPS_ENABLED",
-	"MAILDEV_HTTPS_CERT": "OWLMAIL_HTTPS_CERT",
-	"MAILDEV_HTTPS_KEY":  "OWLMAIL_HTTPS_KEY",
-
-	// Outgoing mail configuration
-	"MAILDEV_OUTGOING_HOST":   "OWLMAIL_OUTGOING_HOST",
-	"MAILDEV_OUTGOING_PORT":   "OWLMAIL_OUTGOING_PORT",
-	"MAILDEV_OUTGOING_USER":   "OWLMAIL_OUTGOING_USER",
-	"MAILDEV_OUTGOING_PASS":   "OWLMAIL_OUTGOING_PASSWORD",
-	"MAILDEV_OUTGOING_SECURE": "OWLMAIL_OUTGOING_SECURE",
-
-	// Auto relay configuration
-	"MAILDEV_AUTO_RELAY":       "OWLMAIL_AUTO_RELAY",
-	"MAILDEV_AUTO_RELAY_ADDR":  "OWLMAIL_AUTO_RELAY_ADDR",
-	"MAILDEV_AUTO_RELAY_RULES": "OWLMAIL_AUTO_RELAY_RULES",
-
-	// SMTP authentication configuration
-	"MAILDEV_INCOMING_USER": "OWLMAIL_SMTP_USER",
-	"MAILDEV_INCOMING_PASS": "OWLMAIL_SMTP_PASSWORD",
-
-	// TLS configuration
-	"MAILDEV_INCOMING_SECURE": "OWLMAIL_TLS_ENABLED",
-	"MAILDEV_INCOMING_CERT":   "OWLMAIL_TLS_CERT",
-	"MAILDEV_INCOMING_KEY":    "OWLMAIL_TLS_KEY",
-}
-
-// GetMailDevEnvString gets environment variable value with MailDev compatibility support
-// Prioritizes MailDev environment variables, falls back to OwlMail environment variables
-// if not present
-func GetMailDevEnvString(owlmailKey string, defaultValue string) string {
-	// Find corresponding MailDev environment variable name
-	for maildevKey, mappedKey := range maildevEnvMapping {
-		if mappedKey == owlmailKey {
-			return getEnvStringWithMailDevCompat(maildevKey, owlmailKey, defaultValue)
-		}
-	}
-	// If no mapping found, use OwlMail environment variable directly
-	if value := os.Getenv(owlmailKey); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-// GetMailDevEnvInt gets environment variable integer value with MailDev compatibility support
-func GetMailDevEnvInt(owlmailKey string, defaultValue int) int {
-	// Find corresponding MailDev environment variable name
-	for maildevKey, mappedKey := range maildevEnvMapping {
-		if mappedKey == owlmailKey {
-			return getEnvIntWithMailDevCompat(maildevKey, owlmailKey, defaultValue)
-		}
-	}
-	// If no mapping found, use OwlMail environment variable directly
-	if value := os.Getenv(owlmailKey); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-// GetMailDevEnvBool gets environment variable boolean value with MailDev compatibility support
-func GetMailDevEnvBool(owlmailKey string, defaultValue bool) bool {
-	// Find corresponding MailDev environment variable name
-	for maildevKey, mappedKey := range maildevEnvMapping {
-		if mappedKey == owlmailKey {
-			return getEnvBoolWithMailDevCompat(maildevKey, owlmailKey, defaultValue)
-		}
-	}
-	// If no mapping found, use OwlMail environment variable directly
-	if value := os.Getenv(owlmailKey); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
-	}
-	return defaultValue
-}
-
-// GetMailDevLogLevel gets log level with MailDev compatibility support
-// MailDev uses --verbose and --silent flags, here we provide compatibility via environment variables
-func GetMailDevLogLevel(defaultValue string) string {
-	// MailDev uses --verbose and --silent flags, which don't have corresponding environment variables
-	// But we can check for MAILDEV_VERBOSE or MAILDEV_SILENT environment variables
-	if os.Getenv("MAILDEV_VERBOSE") != "" {
-		return "verbose"
-	}
-	if os.Getenv("MAILDEV_SILENT") != "" {
-		return "silent"
-	}
-	// If not set, use OwlMail's log level environment variable
-	if value := os.Getenv("OWLMAIL_LOG_LEVEL"); value != "" {
-		return value
-	}
-	return defaultValue
-}
 
 // ============================================================================
 // MailDev API Route Compatibility Layer
@@ -270,3 +68,35 @@ func GetMailDevLogLevel(defaultValue string) string {
 // 8. Clearer WebSocket path: /ws is more concise than /socket.io
 // 9. API versioning: /api/v1/ provides version control
 // 10. More RESTful batch operations: DELETE /emails/batch instead of POST /email/batch/delete
+//
+// Environment Variable Compatibility Layer (handled by internal/config package):
+//
+// Supported MailDev environment variable mappings:
+//   - MAILDEV_SMTP_PORT → OWLMAIL_SMTP_PORT
+//   - MAILDEV_IP → OWLMAIL_SMTP_HOST
+//   - MAILDEV_MAIL_DIRECTORY → OWLMAIL_MAIL_DIR
+//   - MAILDEV_WEB_PORT → OWLMAIL_WEB_PORT
+//   - MAILDEV_WEB_IP → OWLMAIL_WEB_HOST
+//   - MAILDEV_WEB_USER → OWLMAIL_WEB_USER
+//   - MAILDEV_WEB_PASS → OWLMAIL_WEB_PASSWORD
+//   - MAILDEV_HTTPS → OWLMAIL_HTTPS_ENABLED
+//   - MAILDEV_HTTPS_CERT → OWLMAIL_HTTPS_CERT
+//   - MAILDEV_HTTPS_KEY → OWLMAIL_HTTPS_KEY
+//   - MAILDEV_OUTGOING_HOST → OWLMAIL_OUTGOING_HOST
+//   - MAILDEV_OUTGOING_PORT → OWLMAIL_OUTGOING_PORT
+//   - MAILDEV_OUTGOING_USER → OWLMAIL_OUTGOING_USER
+//   - MAILDEV_OUTGOING_PASS → OWLMAIL_OUTGOING_PASSWORD
+//   - MAILDEV_OUTGOING_SECURE → OWLMAIL_OUTGOING_SECURE
+//   - MAILDEV_AUTO_RELAY → OWLMAIL_AUTO_RELAY
+//   - MAILDEV_AUTO_RELAY_ADDR → OWLMAIL_AUTO_RELAY_ADDR
+//   - MAILDEV_AUTO_RELAY_RULES → OWLMAIL_AUTO_RELAY_RULES
+//   - MAILDEV_INCOMING_USER → OWLMAIL_SMTP_USER
+//   - MAILDEV_INCOMING_PASS → OWLMAIL_SMTP_PASSWORD
+//   - MAILDEV_INCOMING_SECURE → OWLMAIL_TLS_ENABLED
+//   - MAILDEV_INCOMING_CERT → OWLMAIL_TLS_CERT
+//   - MAILDEV_INCOMING_KEY → OWLMAIL_TLS_KEY
+//
+// Log level support:
+//   - MAILDEV_VERBOSE → verbose
+//   - MAILDEV_SILENT → silent
+//   - OWLMAIL_LOG_LEVEL → normal/verbose/silent
