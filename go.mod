@@ -1,6 +1,6 @@
 module github.com/soulteary/owlmail
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/emersion/go-message v0.18.2
@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/microcosm-cc/bluemonday v1.0.27
+	github.com/soulteary/cli-kit v1.1.0
 )
 
 require (
