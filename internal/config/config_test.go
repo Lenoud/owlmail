@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"os"
 	"testing"
 
 	"github.com/soulteary/cli-kit/testutil"
@@ -44,7 +43,7 @@ func TestResolveString(t *testing.T) {
 	})
 
 	t.Run("OWLMAIL env takes precedence over default", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
+		_ = envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
 		defer envMgr.Cleanup()
 
 		result := ResolveString(nil, "ip", "OWLMAIL_SMTP_HOST", "default-host")
@@ -54,8 +53,8 @@ func TestResolveString(t *testing.T) {
 	})
 
 	t.Run("MAILDEV env takes precedence over OWLMAIL env", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
-		envMgr.Set("MAILDEV_IP", "maildev-host")
+		_ = envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
+		_ = envMgr.Set("MAILDEV_IP", "maildev-host")
 		defer envMgr.Cleanup()
 
 		result := ResolveString(nil, "ip", "OWLMAIL_SMTP_HOST", "default-host")
@@ -65,8 +64,8 @@ func TestResolveString(t *testing.T) {
 	})
 
 	t.Run("CLI flag takes precedence over all env vars", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
-		envMgr.Set("MAILDEV_IP", "maildev-host")
+		_ = envMgr.Set("OWLMAIL_SMTP_HOST", "owlmail-host")
+		_ = envMgr.Set("MAILDEV_IP", "maildev-host")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -92,7 +91,7 @@ func TestResolveInt(t *testing.T) {
 	})
 
 	t.Run("OWLMAIL env takes precedence over default", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
+		_ = envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
 		defer envMgr.Cleanup()
 
 		result := ResolveInt(nil, "smtp", "OWLMAIL_SMTP_PORT", 1025)
@@ -102,8 +101,8 @@ func TestResolveInt(t *testing.T) {
 	})
 
 	t.Run("MAILDEV env takes precedence over OWLMAIL env", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
-		envMgr.Set("MAILDEV_SMTP_PORT", "3025")
+		_ = envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
+		_ = envMgr.Set("MAILDEV_SMTP_PORT", "3025")
 		defer envMgr.Cleanup()
 
 		result := ResolveInt(nil, "smtp", "OWLMAIL_SMTP_PORT", 1025)
@@ -113,8 +112,8 @@ func TestResolveInt(t *testing.T) {
 	})
 
 	t.Run("CLI flag takes precedence over all env vars", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
-		envMgr.Set("MAILDEV_SMTP_PORT", "3025")
+		_ = envMgr.Set("OWLMAIL_SMTP_PORT", "2025")
+		_ = envMgr.Set("MAILDEV_SMTP_PORT", "3025")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -140,7 +139,7 @@ func TestResolveBool(t *testing.T) {
 	})
 
 	t.Run("OWLMAIL env takes precedence over default", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_HTTPS_ENABLED", "true")
+		_ = envMgr.Set("OWLMAIL_HTTPS_ENABLED", "true")
 		defer envMgr.Cleanup()
 
 		result := ResolveBool(nil, "https", "OWLMAIL_HTTPS_ENABLED", false)
@@ -150,8 +149,8 @@ func TestResolveBool(t *testing.T) {
 	})
 
 	t.Run("MAILDEV env takes precedence over OWLMAIL env", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_HTTPS_ENABLED", "false")
-		envMgr.Set("MAILDEV_HTTPS", "true")
+		_ = envMgr.Set("OWLMAIL_HTTPS_ENABLED", "false")
+		_ = envMgr.Set("MAILDEV_HTTPS", "true")
 		defer envMgr.Cleanup()
 
 		result := ResolveBool(nil, "https", "OWLMAIL_HTTPS_ENABLED", false)
@@ -161,8 +160,8 @@ func TestResolveBool(t *testing.T) {
 	})
 
 	t.Run("CLI flag takes precedence over all env vars", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_HTTPS_ENABLED", "true")
-		envMgr.Set("MAILDEV_HTTPS", "true")
+		_ = envMgr.Set("OWLMAIL_HTTPS_ENABLED", "true")
+		_ = envMgr.Set("MAILDEV_HTTPS", "true")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -188,7 +187,7 @@ func TestResolveLogLevel(t *testing.T) {
 	})
 
 	t.Run("OWLMAIL_LOG_LEVEL takes precedence over default", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_LOG_LEVEL", "verbose")
+		_ = envMgr.Set("OWLMAIL_LOG_LEVEL", "verbose")
 		defer envMgr.Cleanup()
 
 		result := ResolveLogLevel(nil, "log-level", "normal")
@@ -198,8 +197,8 @@ func TestResolveLogLevel(t *testing.T) {
 	})
 
 	t.Run("MAILDEV_VERBOSE takes precedence over OWLMAIL_LOG_LEVEL", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_LOG_LEVEL", "silent")
-		envMgr.Set("MAILDEV_VERBOSE", "1")
+		_ = envMgr.Set("OWLMAIL_LOG_LEVEL", "silent")
+		_ = envMgr.Set("MAILDEV_VERBOSE", "1")
 		defer envMgr.Cleanup()
 
 		result := ResolveLogLevel(nil, "log-level", "normal")
@@ -209,8 +208,8 @@ func TestResolveLogLevel(t *testing.T) {
 	})
 
 	t.Run("MAILDEV_SILENT takes precedence over OWLMAIL_LOG_LEVEL", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_LOG_LEVEL", "verbose")
-		envMgr.Set("MAILDEV_SILENT", "1")
+		_ = envMgr.Set("OWLMAIL_LOG_LEVEL", "verbose")
+		_ = envMgr.Set("MAILDEV_SILENT", "1")
 		defer envMgr.Cleanup()
 
 		result := ResolveLogLevel(nil, "log-level", "normal")
@@ -220,8 +219,8 @@ func TestResolveLogLevel(t *testing.T) {
 	})
 
 	t.Run("MAILDEV_VERBOSE takes precedence over MAILDEV_SILENT", func(t *testing.T) {
-		envMgr.Set("MAILDEV_VERBOSE", "1")
-		envMgr.Set("MAILDEV_SILENT", "1")
+		_ = envMgr.Set("MAILDEV_VERBOSE", "1")
+		_ = envMgr.Set("MAILDEV_SILENT", "1")
 		defer envMgr.Cleanup()
 
 		result := ResolveLogLevel(nil, "log-level", "normal")
@@ -231,7 +230,7 @@ func TestResolveLogLevel(t *testing.T) {
 	})
 
 	t.Run("CLI flag takes precedence over all env vars", func(t *testing.T) {
-		envMgr.Set("MAILDEV_VERBOSE", "1")
+		_ = envMgr.Set("MAILDEV_VERBOSE", "1")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -320,8 +319,8 @@ func TestDefineAndResolveConfig(t *testing.T) {
 	})
 
 	t.Run("environment variables work", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_PORT", "3025")
-		envMgr.Set("OWLMAIL_SMTP_HOST", "192.168.1.1")
+		_ = envMgr.Set("OWLMAIL_SMTP_PORT", "3025")
+		_ = envMgr.Set("OWLMAIL_SMTP_HOST", "192.168.1.1")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test-env", flag.ContinueOnError)
@@ -338,9 +337,9 @@ func TestDefineAndResolveConfig(t *testing.T) {
 	})
 
 	t.Run("MAILDEV compatibility", func(t *testing.T) {
-		envMgr.Set("MAILDEV_SMTP_PORT", "4025")
-		envMgr.Set("MAILDEV_IP", "10.0.0.1")
-		envMgr.Set("MAILDEV_WEB_PORT", "9080")
+		_ = envMgr.Set("MAILDEV_SMTP_PORT", "4025")
+		_ = envMgr.Set("MAILDEV_IP", "10.0.0.1")
+		_ = envMgr.Set("MAILDEV_WEB_PORT", "9080")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test-maildev", flag.ContinueOnError)
@@ -360,8 +359,8 @@ func TestDefineAndResolveConfig(t *testing.T) {
 	})
 
 	t.Run("CLI flags override environment variables", func(t *testing.T) {
-		envMgr.Set("OWLMAIL_SMTP_PORT", "3025")
-		envMgr.Set("MAILDEV_IP", "10.0.0.1")
+		_ = envMgr.Set("OWLMAIL_SMTP_PORT", "3025")
+		_ = envMgr.Set("MAILDEV_IP", "10.0.0.1")
 		defer envMgr.Cleanup()
 
 		fs := flag.NewFlagSet("test-cli-override", flag.ContinueOnError)
@@ -424,39 +423,5 @@ func TestEnvMappingCount(t *testing.T) {
 	expectedCount := 23
 	if len(EnvMapping) != expectedCount {
 		t.Errorf("len(EnvMapping) = %d, want %d", len(EnvMapping), expectedCount)
-	}
-}
-
-// Helper to clear all test environment variables
-func clearTestEnvVars() {
-	envVars := []string{
-		"OWLMAIL_SMTP_PORT", "MAILDEV_SMTP_PORT",
-		"OWLMAIL_SMTP_HOST", "MAILDEV_IP",
-		"OWLMAIL_MAIL_DIR", "MAILDEV_MAIL_DIRECTORY",
-		"OWLMAIL_WEB_PORT", "MAILDEV_WEB_PORT",
-		"OWLMAIL_WEB_HOST", "MAILDEV_WEB_IP",
-		"OWLMAIL_WEB_USER", "MAILDEV_WEB_USER",
-		"OWLMAIL_WEB_PASSWORD", "MAILDEV_WEB_PASS",
-		"OWLMAIL_HTTPS_ENABLED", "MAILDEV_HTTPS",
-		"OWLMAIL_HTTPS_CERT", "MAILDEV_HTTPS_CERT",
-		"OWLMAIL_HTTPS_KEY", "MAILDEV_HTTPS_KEY",
-		"OWLMAIL_OUTGOING_HOST", "MAILDEV_OUTGOING_HOST",
-		"OWLMAIL_OUTGOING_PORT", "MAILDEV_OUTGOING_PORT",
-		"OWLMAIL_OUTGOING_USER", "MAILDEV_OUTGOING_USER",
-		"OWLMAIL_OUTGOING_PASSWORD", "MAILDEV_OUTGOING_PASS",
-		"OWLMAIL_OUTGOING_SECURE", "MAILDEV_OUTGOING_SECURE",
-		"OWLMAIL_AUTO_RELAY", "MAILDEV_AUTO_RELAY",
-		"OWLMAIL_AUTO_RELAY_ADDR", "MAILDEV_AUTO_RELAY_ADDR",
-		"OWLMAIL_AUTO_RELAY_RULES", "MAILDEV_AUTO_RELAY_RULES",
-		"OWLMAIL_SMTP_USER", "MAILDEV_INCOMING_USER",
-		"OWLMAIL_SMTP_PASSWORD", "MAILDEV_INCOMING_PASS",
-		"OWLMAIL_TLS_ENABLED", "MAILDEV_INCOMING_SECURE",
-		"OWLMAIL_TLS_CERT", "MAILDEV_INCOMING_CERT",
-		"OWLMAIL_TLS_KEY", "MAILDEV_INCOMING_KEY",
-		"OWLMAIL_LOG_LEVEL", "MAILDEV_VERBOSE", "MAILDEV_SILENT",
-		"OWLMAIL_USE_UUID_FOR_EMAIL_ID",
-	}
-	for _, envVar := range envVars {
-		_ = os.Unsetenv(envVar)
 	}
 }

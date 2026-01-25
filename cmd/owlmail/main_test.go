@@ -704,9 +704,9 @@ func TestConfigPackageIntegration(t *testing.T) {
 	defer envMgr.Cleanup()
 
 	// Test with MAILDEV compatibility
-	envMgr.Set("MAILDEV_SMTP_PORT", "2025")
-	envMgr.Set("MAILDEV_IP", "0.0.0.0")
-	envMgr.Set("MAILDEV_VERBOSE", "1")
+	_ = envMgr.Set("MAILDEV_SMTP_PORT", "2025")
+	_ = envMgr.Set("MAILDEV_IP", "0.0.0.0")
+	_ = envMgr.Set("MAILDEV_VERBOSE", "1")
 
 	// Use the config package's ResolveLogLevel
 	logLevel := config.ResolveLogLevel(nil, "log-level", "normal")

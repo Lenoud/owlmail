@@ -1280,7 +1280,7 @@ func TestParseEmailWithSimpleText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open email file: %v", err)
 	}
-	defer emailFile.Close()
+	defer func() { _ = emailFile.Close() }()
 
 	email, err := server.parseEmail("simple-text", emailFile, nil, false, false)
 	if err != nil {
@@ -1327,7 +1327,7 @@ func TestParseEmailWithHTMLOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open email file: %v", err)
 	}
-	defer emailFile.Close()
+	defer func() { _ = emailFile.Close() }()
 
 	email, err := server.parseEmail("html-only", emailFile, nil, false, false)
 	if err != nil {
@@ -1383,7 +1383,7 @@ func TestParseEmailWithAttachment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open email file: %v", err)
 	}
-	defer emailFile.Close()
+	defer func() { _ = emailFile.Close() }()
 
 	email, err := server.parseEmail("with-attachment", emailFile, nil, true, false)
 	if err != nil {
@@ -1436,7 +1436,7 @@ func TestParseEmailWithContentID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open email file: %v", err)
 	}
-	defer emailFile.Close()
+	defer func() { _ = emailFile.Close() }()
 
 	email, err := server.parseEmail("with-contentid", emailFile, nil, true, false)
 	if err != nil {
@@ -1474,7 +1474,7 @@ func TestParseEmailWithInvalidContent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open email file: %v", err)
 	}
-	defer emailFile.Close()
+	defer func() { _ = emailFile.Close() }()
 
 	_, err = server.parseEmail("invalid", emailFile, nil, false, false)
 	if err == nil {
