@@ -3,8 +3,6 @@ package common
 import (
 	"fmt"
 	"log"
-
-	logger "github.com/soulteary/logger-kit"
 )
 
 // ErrorHandler defines the error handling interface
@@ -17,7 +15,7 @@ type DefaultErrorHandler struct{}
 
 func (h *DefaultErrorHandler) Fatal(format string, v ...interface{}) error {
 	msg := fmt.Sprintf(format, v...)
-	logger.Default().Error().Msg(msg)
+	Error("%s", msg)
 	log.Fatalf("[FATAL] %s", msg)
 	// This line will never execute, but satisfies the interface requirement
 	return fmt.Errorf("%s", msg)

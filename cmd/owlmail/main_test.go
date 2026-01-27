@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,6 +14,11 @@ import (
 	"github.com/soulteary/owlmail/internal/config"
 	"github.com/soulteary/owlmail/internal/mailserver"
 )
+
+// loggerEventTestMu serializes tests that use common.InitLogger or registerEventHandlers,
+// so they do not race with logger-kit/zerolog globals when one test's handler runs
+// while another calls InitLogger.
+var loggerEventTestMu sync.Mutex
 
 func TestLoadAutoRelayRules(t *testing.T) {
 	// Create temporary directory
@@ -341,6 +347,8 @@ func TestSetupTLSConfig(t *testing.T) {
 }
 
 func TestRegisterEventHandlers(t *testing.T) {
+	loggerEventTestMu.Lock()
+	defer loggerEventTestMu.Unlock()
 	// Create a test mail server
 	tmpDir := t.TempDir()
 	server, err := mailserver.NewMailServer(1025, "localhost", tmpDir)
@@ -431,6 +439,8 @@ func TestSetupGracefulShutdownWithNilServer(t *testing.T) {
 
 // TestRegisterEventHandlersWithEvents tests that event handlers are actually called when events are triggered
 func TestRegisterEventHandlersWithEvents(t *testing.T) {
+	loggerEventTestMu.Lock()
+	defer loggerEventTestMu.Unlock()
 	tmpDir := t.TempDir()
 	server, err := mailserver.NewMailServer(1025, "localhost", tmpDir)
 	if err != nil {
@@ -498,6 +508,10 @@ func TestRegisterEventHandlersWithEvents(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Error("'delete' event handler should have been called")
 	}
+
+	// Wait for registerEventHandlers' handlers (common.Log/Verbose) to finish
+	// before releasing loggerEventTestMu.
+	time.Sleep(500 * time.Millisecond)
 }
 
 // TestSetupGracefulShutdown tests the graceful shutdown mechanism
@@ -526,6 +540,8 @@ func TestSetupGracefulShutdown(t *testing.T) {
 
 // TestInitializeApplication tests the initializeApplication function
 func TestInitializeApplication(t *testing.T) {
+	loggerEventTestMu.Lock()
+	defer loggerEventTestMu.Unlock()
 	// Test with nil config
 	err := initializeApplication(nil)
 	if err == nil {
@@ -717,6 +733,8 @@ func TestConfigPackageIntegration(t *testing.T) {
 
 // TestRegisterEventHandlersWithEmptyEmail tests event handlers with email that has empty fields
 func TestRegisterEventHandlersWithEmptyEmail(t *testing.T) {
+	loggerEventTestMu.Lock()
+	defer loggerEventTestMu.Unlock()
 	tmpDir := t.TempDir()
 	server, err := mailserver.NewMailServer(1025, "localhost", tmpDir)
 	if err != nil {
@@ -758,19 +776,21 @@ func TestRegisterEventHandlersWithEmptyEmail(t *testing.T) {
 		t.Fatalf("Failed to delete email: %v", err)
 	}
 
-	// Give handlers time to process
-	time.Sleep(100 * time.Millisecond)
+	// Wait for async handlers to finish before returning (and releasing loggerEventTestMu).
+	// InitLogger in the next test must not run while handlers are still in Log/Verbose.
+	time.Sleep(500 * time.Millisecond)
 }
 
 // TestRegisterEventHandlersWithVerboseLogging tests event handlers with verbose logging enabled
 func TestRegisterEventHandlersWithVerboseLogging(t *testing.T) {
-	// Set verbose logging
+	loggerEventTestMu.Lock()
+	defer loggerEventTestMu.Unlock()
+	// Set verbose logging. We do not reset the logger in a defer because
+	// InitLogger calls logger-kit New(), which writes zerolog globals, and
+	// event handlers call Verbose()/Log() from other goroutines. Resetting
+	// here would introduce a data race. Other tests that need a specific
+	// level should call common.InitLogger at their start.
 	common.InitLogger(common.LogLevelVerbose)
-	defer func() {
-		// Wait a bit longer to ensure all async event handlers have completed
-		time.Sleep(200 * time.Millisecond)
-		common.InitLogger(common.LogLevelNormal)
-	}()
 
 	tmpDir := t.TempDir()
 	server, err := mailserver.NewMailServer(1025, "localhost", tmpDir)

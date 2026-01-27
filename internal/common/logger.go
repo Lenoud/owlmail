@@ -3,6 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	logger "github.com/soulteary/logger-kit"
 )
@@ -19,6 +20,11 @@ const (
 	LogLevelVerbose
 )
 
+var (
+	defaultLog   *logger.Logger
+	defaultLogMu sync.RWMutex
+)
+
 // owlmailToLoggerLevel maps owlmail LogLevel to logger-kit Level.
 func owlmailToLoggerLevel(l LogLevel) logger.Level {
 	switch l {
@@ -33,8 +39,19 @@ func owlmailToLoggerLevel(l LogLevel) logger.Level {
 	}
 }
 
-// InitLogger initializes the global logger with the specified level using logger-kit.
+// getLoggerUnsafe returns the current logger. Caller must hold defaultLogMu (RLock or Lock).
+func getLoggerUnsafe() *logger.Logger {
+	if defaultLog != nil {
+		return defaultLog
+	}
+	return logger.Default()
+}
+
+// InitLogger initializes the global logger. Holds the lock for the whole call so it does
+// not race with Log/Verbose/Error: logger.New() writes zerolog globals, and Msg() reads them.
 func InitLogger(level LogLevel) {
+	defaultLogMu.Lock()
+	defer defaultLogMu.Unlock()
 	kitLevel := owlmailToLoggerLevel(level)
 	l := logger.New(logger.Config{
 		Level:       kitLevel,
@@ -42,27 +59,42 @@ func InitLogger(level LogLevel) {
 		Format:      logger.FormatConsole,
 		ServiceName: "owlmail",
 	})
-	logger.SetDefault(l)
+	defaultLog = l
 }
 
 // Log prints a log message at info level (normal and verbose).
 func Log(format string, v ...interface{}) {
-	logger.Default().Info().Msg(fmt.Sprintf(format, v...))
+	defaultLogMu.RLock()
+	l := getLoggerUnsafe()
+	msg := fmt.Sprintf(format, v...)
+	l.Info().Msg(msg)
+	defaultLogMu.RUnlock()
 }
 
 // Verbose prints a log message at debug level (verbose only).
 func Verbose(format string, v ...interface{}) {
-	logger.Default().Debug().Msg(fmt.Sprintf(format, v...))
+	defaultLogMu.RLock()
+	l := getLoggerUnsafe()
+	msg := fmt.Sprintf(format, v...)
+	l.Debug().Msg(msg)
+	defaultLogMu.RUnlock()
 }
 
 // Error prints an error message (always shown).
 func Error(format string, v ...interface{}) {
-	logger.Default().Error().Msg(fmt.Sprintf(format, v...))
+	defaultLogMu.RLock()
+	l := getLoggerUnsafe()
+	msg := fmt.Sprintf(format, v...)
+	l.Error().Msg(msg)
+	defaultLogMu.RUnlock()
 }
 
 // Fatal logs a fatal error via the error handler (returns error in tests, exits in production).
-// Logs at Error level first, then delegates to the error handler.
 func Fatal(format string, v ...interface{}) error {
-	logger.Default().Error().Msg(fmt.Sprintf(format, v...))
+	defaultLogMu.RLock()
+	l := getLoggerUnsafe()
+	msg := fmt.Sprintf(format, v...)
+	l.Error().Msg(msg)
+	defaultLogMu.RUnlock()
 	return GetErrorHandler().Fatal(format, v...)
 }
