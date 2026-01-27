@@ -1,13 +1,13 @@
 package common
 
 import (
-	"io"
-	"log"
+	"fmt"
 	"os"
-	"sync"
+
+	logger "github.com/soulteary/logger-kit"
 )
 
-// LogLevel represents the logging level
+// LogLevel represents the logging level (owlmail legacy: silent / normal / verbose).
 type LogLevel int
 
 const (
@@ -19,112 +19,50 @@ const (
 	LogLevelVerbose
 )
 
-// Logger wraps the standard log package with level support
-type Logger struct {
-	level        LogLevel
-	logger       *log.Logger
-	errorHandler ErrorHandler // Error handler for fatal errors
+// owlmailToLoggerLevel maps owlmail LogLevel to logger-kit Level.
+func owlmailToLoggerLevel(l LogLevel) logger.Level {
+	switch l {
+	case LogLevelSilent:
+		return logger.ErrorLevel // only errors in silent mode
+	case LogLevelNormal:
+		return logger.InfoLevel
+	case LogLevelVerbose:
+		return logger.DebugLevel
+	default:
+		return logger.InfoLevel
+	}
 }
 
-var (
-	globalLogger *Logger
-	loggerMu     sync.RWMutex // Protects globalLogger from concurrent access
-)
-
-// InitLogger initializes the global logger with the specified level
+// InitLogger initializes the global logger with the specified level using logger-kit.
 func InitLogger(level LogLevel) {
-	var output io.Writer = os.Stdout
-
-	// In silent mode, discard all output except errors
-	if level == LogLevelSilent {
-		output = io.Discard
-	}
-
-	loggerMu.Lock()
-	defer loggerMu.Unlock()
-
-	globalLogger = &Logger{
-		level:  level,
-		logger: log.New(output, "", log.LstdFlags),
-	}
+	kitLevel := owlmailToLoggerLevel(level)
+	l := logger.New(logger.Config{
+		Level:       kitLevel,
+		Output:      os.Stdout,
+		Format:      logger.FormatConsole,
+		ServiceName: "owlmail",
+	})
+	logger.SetDefault(l)
 }
 
-// GetLogger returns the global logger instance
-func GetLogger() *Logger {
-	loggerMu.RLock()
-	if globalLogger != nil {
-		logger := globalLogger
-		loggerMu.RUnlock()
-		return logger
-	}
-	loggerMu.RUnlock()
-
-	// Double-check pattern to avoid race condition
-	loggerMu.Lock()
-	defer loggerMu.Unlock()
-	if globalLogger == nil {
-		var output io.Writer = os.Stdout
-		globalLogger = &Logger{
-			level:  LogLevelNormal,
-			logger: log.New(output, "", log.LstdFlags),
-		}
-	}
-	return globalLogger
-}
-
-// SetLevel sets the logging level
-func (l *Logger) SetLevel(level LogLevel) {
-	l.level = level
-	if level == LogLevelSilent {
-		l.logger.SetOutput(io.Discard)
-	} else {
-		l.logger.SetOutput(os.Stdout)
-	}
-}
-
-// Log prints a log message if level allows
-func (l *Logger) Log(format string, v ...interface{}) {
-	if l.level >= LogLevelNormal {
-		l.logger.Printf(format, v...)
-	}
-}
-
-// Verbose prints a verbose log message if verbose mode is enabled
-func (l *Logger) Verbose(format string, v ...interface{}) {
-	if l.level >= LogLevelVerbose {
-		l.logger.Printf("[VERBOSE] "+format, v...)
-	}
-}
-
-// Error prints an error message (always shown)
-func (l *Logger) Error(format string, v ...interface{}) {
-	// Errors are always shown, even in silent mode
-	log.Printf("[ERROR] "+format, v...)
-}
-
-// Fatal logs a fatal error and exits
-// Uses the error handler to return an error instead of exiting in test environments
-func (l *Logger) Fatal(format string, v ...interface{}) error {
-	if l.errorHandler != nil {
-		return l.errorHandler.Fatal(format, v...)
-	}
-	// Fallback to global error handler
-	return GetErrorHandler().Fatal(format, v...)
-}
-
-// Convenience functions for global logger
+// Log prints a log message at info level (normal and verbose).
 func Log(format string, v ...interface{}) {
-	GetLogger().Log(format, v...)
+	logger.Default().Info().Msg(fmt.Sprintf(format, v...))
 }
 
+// Verbose prints a log message at debug level (verbose only).
 func Verbose(format string, v ...interface{}) {
-	GetLogger().Verbose(format, v...)
+	logger.Default().Debug().Msg(fmt.Sprintf(format, v...))
 }
 
+// Error prints an error message (always shown).
 func Error(format string, v ...interface{}) {
-	GetLogger().Error(format, v...)
+	logger.Default().Error().Msg(fmt.Sprintf(format, v...))
 }
 
+// Fatal logs a fatal error via the error handler (returns error in tests, exits in production).
+// Logs at Error level first, then delegates to the error handler.
 func Fatal(format string, v ...interface{}) error {
-	return GetLogger().Fatal(format, v...)
+	logger.Default().Error().Msg(fmt.Sprintf(format, v...))
+	return GetErrorHandler().Fatal(format, v...)
 }

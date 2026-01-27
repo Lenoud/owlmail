@@ -10,8 +10,10 @@ import (
 	_ "github.com/emersion/go-message/charset"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/soulteary/health-kit"
 	"github.com/soulteary/owlmail/internal/mailserver"
 	"github.com/soulteary/owlmail/internal/types"
+	"github.com/soulteary/version-kit"
 )
 
 // API represents the REST API server
@@ -184,7 +186,10 @@ func (api *API) setupImprovedAPIRoutes(router *gin.Engine) {
 		}
 
 		// Health check (more standard than /healthz)
-		v1.GET("/health", api.healthCheck)
+		v1.GET("/health", gin.WrapF(health.LivenessHandler("owlmail")))
+
+		// Version info
+		v1.GET("/version", gin.WrapF(version.Handler()))
 
 		// WebSocket (clearer path)
 		v1.GET("/ws", api.handleWebSocket)
@@ -312,7 +317,7 @@ func (api *API) setupMailDevCompatibleRoutes(router *gin.Engine) {
 	}
 
 	// Health check route (MailDev compatible)
-	router.GET("/healthz", api.healthCheck)
+	router.GET("/healthz", gin.WrapF(health.LivenessHandler("owlmail")))
 
 	// Reload mails from directory route (MailDev compatible)
 	router.GET("/reloadMailsFromDirectory", api.reloadMailsFromDirectory)

@@ -5,12 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/soulteary/owlmail/internal/outgoing"
+	"github.com/soulteary/version-kit"
 )
 
 // getConfig handles GET /api/v1/settings
 func (api *API) getConfig(c *gin.Context) {
 	config := gin.H{
-		"version": "1.0.0",
+		"version": version.Default().Version,
 		"smtp": gin.H{
 			"host": api.mailServer.GetHost(),
 			"port": api.mailServer.GetPort(),
@@ -211,12 +212,5 @@ func (api *API) patchOutgoingConfig(c *gin.Context) {
 			"allowRules":    currentConfig.AllowRules,
 			"denyRules":     currentConfig.DenyRules,
 		},
-	})
-}
-
-// healthCheck handles GET /api/v1/health
-func (api *API) healthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
 	})
 }

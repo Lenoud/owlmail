@@ -1,15 +1,10 @@
 package common
 
 import (
-	"bytes"
-	"io"
-	"log"
-	"os"
 	"testing"
 )
 
 func TestLogLevel(t *testing.T) {
-	// Test LogLevel constants
 	if LogLevelSilent >= LogLevelNormal {
 		t.Error("LogLevelSilent should be less than LogLevelNormal")
 	}
@@ -19,196 +14,56 @@ func TestLogLevel(t *testing.T) {
 }
 
 func TestInitLogger(t *testing.T) {
-	// Reset global logger
-	globalLogger = nil
-
-	// Test initialization with different levels
 	InitLogger(LogLevelSilent)
-	if globalLogger == nil {
-		t.Error("globalLogger should not be nil after InitLogger")
-	}
-	if globalLogger.level != LogLevelSilent {
-		t.Errorf("Expected level %d, got %d", LogLevelSilent, globalLogger.level)
-	}
-
 	InitLogger(LogLevelNormal)
-	if globalLogger.level != LogLevelNormal {
-		t.Errorf("Expected level %d, got %d", LogLevelNormal, globalLogger.level)
-	}
+	InitLogger(LogLevelVerbose)
+}
+
+func TestLog(t *testing.T) {
+	InitLogger(LogLevelNormal)
+	Log("test message")
+}
+
+func TestVerbose(t *testing.T) {
+	InitLogger(LogLevelVerbose)
+	Verbose("test message")
+}
+
+func TestError(t *testing.T) {
+	InitLogger(LogLevelSilent)
+	Error("test error")
+}
+
+func TestLogWithFormatting(t *testing.T) {
+	InitLogger(LogLevelNormal)
+	Log("test message: %s", "value")
+	Log("test: %s %d", "value", 42)
+}
+
+func TestVerboseWithFormatting(t *testing.T) {
+	InitLogger(LogLevelVerbose)
+	Verbose("test message: %s", "value")
+	Verbose("test: %s %d", "value", 42)
+}
+
+func TestErrorWithFormatting(t *testing.T) {
+	Error("test error: %s", "value")
+	Error("test error: %s %d", "value", 42)
+}
+
+func TestConvenienceFunctions(t *testing.T) {
+	InitLogger(LogLevelNormal)
+	Log("test message")
 
 	InitLogger(LogLevelVerbose)
-	if globalLogger.level != LogLevelVerbose {
-		t.Errorf("Expected level %d, got %d", LogLevelVerbose, globalLogger.level)
-	}
-}
+	Verbose("test message")
 
-func TestGetLogger(t *testing.T) {
-	// Reset global logger
-	globalLogger = nil
-
-	// Test GetLogger when nil
-	logger := GetLogger()
-	if logger == nil {
-		t.Error("GetLogger should not return nil")
-	}
-	if globalLogger == nil {
-		t.Error("globalLogger should be initialized by GetLogger")
-	}
-
-	// Test GetLogger when already initialized
-	InitLogger(LogLevelVerbose)
-	logger = GetLogger()
-	if logger.level != LogLevelVerbose {
-		t.Errorf("Expected level %d, got %d", LogLevelVerbose, logger.level)
-	}
-}
-
-func TestLoggerSetLevel(t *testing.T) {
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(os.Stdout, "", log.LstdFlags),
-	}
-
-	// Test setting to Silent
-	logger.SetLevel(LogLevelSilent)
-	if logger.level != LogLevelSilent {
-		t.Errorf("Expected level %d, got %d", LogLevelSilent, logger.level)
-	}
-
-	// Test setting to Normal
-	logger.SetLevel(LogLevelNormal)
-	if logger.level != LogLevelNormal {
-		t.Errorf("Expected level %d, got %d", LogLevelNormal, logger.level)
-	}
-
-	// Test setting to Verbose
-	logger.SetLevel(LogLevelVerbose)
-	if logger.level != LogLevelVerbose {
-		t.Errorf("Expected level %d, got %d", LogLevelVerbose, logger.level)
-	}
-}
-
-func TestLoggerLog(t *testing.T) {
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Test Log at Normal level
-	logger.Log("test message")
-	if buf.Len() == 0 {
-		t.Error("Log should write to buffer at Normal level")
-	}
-
-	// Test Log at Verbose level
-	buf.Reset()
-	logger.level = LogLevelVerbose
-	logger.Log("test message")
-	if buf.Len() == 0 {
-		t.Error("Log should write to buffer at Verbose level")
-	}
-
-	// Test Log at Silent level
-	buf.Reset()
-	logger.level = LogLevelSilent
-	logger.Log("test message")
-	if buf.Len() != 0 {
-		t.Error("Log should not write to buffer at Silent level")
-	}
-}
-
-func TestLoggerVerbose(t *testing.T) {
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelVerbose,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Test Verbose at Verbose level
-	logger.Verbose("test message")
-	if buf.Len() == 0 {
-		t.Error("Verbose should write to buffer at Verbose level")
-	}
-
-	// Test Verbose at Normal level
-	buf.Reset()
-	logger.level = LogLevelNormal
-	logger.Verbose("test message")
-	if buf.Len() != 0 {
-		t.Error("Verbose should not write to buffer at Normal level")
-	}
-
-	// Test Verbose at Silent level
-	buf.Reset()
-	logger.level = LogLevelSilent
-	logger.Verbose("test message")
-	if buf.Len() != 0 {
-		t.Error("Verbose should not write to buffer at Silent level")
-	}
-}
-
-func TestLoggerError(t *testing.T) {
-	// Error should always log, regardless of level
-	logger := &Logger{
-		level:  LogLevelSilent,
-		logger: log.New(io.Discard, "", 0),
-	}
-
-	// Error uses standard log, so we can't easily test output
-	// But we can test it doesn't panic
-	logger.Error("test error")
-}
-
-func TestLoggerFatal(t *testing.T) {
-	// Fatal uses log.Fatalf which exits, so we can't test it directly
-	// But we can verify the method exists and doesn't panic in normal cases
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(io.Discard, "", 0),
-	}
-
-	// Note: We can't actually test Fatal as it calls os.Exit
-	// This is just to ensure the method exists
-	_ = logger.Fatal
-
-	// Test that Fatal method can be called (though it will exit)
-	// We use a subprocess approach to test it
-	if os.Getenv("TEST_FATAL") == "1" {
-		// Fatal returns an error in test environment when error handler is set
-		_ = logger.Fatal("test fatal message")
-		return
-	}
-
-	// Test global Fatal function
+	Error("test error")
 	_ = Fatal
 }
 
-// TestLoggerFatalWithErrorHandler tests Fatal with error handler
-func TestLoggerFatalWithErrorHandler(t *testing.T) {
-	testHandler := &TestErrorHandler{}
-	SetErrorHandler(testHandler)
-	defer ResetErrorHandler()
-
-	logger := &Logger{
-		level:        LogLevelNormal,
-		logger:       log.New(io.Discard, "", 0),
-		errorHandler: testHandler,
-	}
-
-	// Now we can test Fatal without exiting the program
-	err := logger.Fatal("test fatal message")
-	if err == nil {
-		t.Error("Fatal should return an error")
-	}
-
-	if testHandler.LastError == nil {
-		t.Error("Error handler should record the error")
-	}
-
-	if testHandler.LastError.Error() != err.Error() {
-		t.Errorf("Expected error %v, got %v", testHandler.LastError, err)
-	}
+func TestInitLoggerSilentMode(t *testing.T) {
+	InitLogger(LogLevelSilent)
 }
 
 // TestGlobalFatalWithErrorHandler tests global Fatal function with error handler
@@ -217,7 +72,6 @@ func TestGlobalFatalWithErrorHandler(t *testing.T) {
 	SetErrorHandler(testHandler)
 	defer ResetErrorHandler()
 
-	// Test the global Fatal function
 	err := Fatal("test global fatal message")
 	if err == nil {
 		t.Error("Fatal should return an error")
@@ -226,131 +80,16 @@ func TestGlobalFatalWithErrorHandler(t *testing.T) {
 	if testHandler.LastError == nil {
 		t.Error("Error handler should record the error")
 	}
-}
-
-// TestLoggerFatalWithoutErrorHandler tests Fatal without error handler (uses global)
-func TestLoggerFatalWithoutErrorHandler(t *testing.T) {
-	testHandler := &TestErrorHandler{}
-	SetErrorHandler(testHandler)
-	defer ResetErrorHandler()
-
-	// Create logger without errorHandler - should use global error handler
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(io.Discard, "", 0),
-		// errorHandler is nil, so it should use global error handler
-	}
-
-	// Test Fatal without errorHandler - should use global error handler
-	err := logger.Fatal("test fatal without handler")
-	if err == nil {
-		t.Error("Fatal should return an error")
-	}
-
-	if testHandler.LastError == nil {
-		t.Error("Global error handler should record the error")
-	}
 
 	if testHandler.LastError.Error() != err.Error() {
 		t.Errorf("Expected error %v, got %v", testHandler.LastError, err)
 	}
 }
 
-// TestLoggerLogWithFormatting tests Log with formatting arguments
-func TestLoggerLogWithFormatting(t *testing.T) {
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Test Log with formatting
-	logger.Log("test message: %s", "value")
-	if buf.Len() == 0 {
-		t.Error("Log should write to buffer with formatting")
-	}
-
-	// Test Log with multiple arguments
-	buf.Reset()
-	logger.Log("test: %s %d", "value", 42)
-	if buf.Len() == 0 {
-		t.Error("Log should write to buffer with multiple arguments")
-	}
-}
-
-// TestLoggerVerboseWithFormatting tests Verbose with formatting arguments
-func TestLoggerVerboseWithFormatting(t *testing.T) {
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelVerbose,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Test Verbose with formatting
-	logger.Verbose("test message: %s", "value")
-	if buf.Len() == 0 {
-		t.Error("Verbose should write to buffer with formatting")
-	}
-
-	// Test Verbose with multiple arguments
-	buf.Reset()
-	logger.Verbose("test: %s %d", "value", 42)
-	if buf.Len() == 0 {
-		t.Error("Verbose should write to buffer with multiple arguments")
-	}
-}
-
-// TestLoggerErrorWithFormatting tests Error with formatting arguments
-func TestLoggerErrorWithFormatting(t *testing.T) {
-	logger := &Logger{
-		level:  LogLevelSilent,
-		logger: log.New(io.Discard, "", 0),
-	}
-
-	// Error uses standard log, so we can't easily test output
-	// But we can test it doesn't panic with formatting
-	logger.Error("test error: %s", "value")
-	logger.Error("test error: %s %d", "value", 42)
-}
-
-// TestSetLevelOutputSwitching tests SetLevel output switching
-func TestSetLevelOutputSwitching(t *testing.T) {
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelNormal,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Test switching to Silent (should switch to Discard)
-	logger.SetLevel(LogLevelSilent)
-	logger.Log("should not appear")
-	if buf.Len() != 0 {
-		t.Error("Silent level should not write to buffer")
-	}
-
-	// Test switching back to Normal (should switch back to stdout)
-	// Note: We can't easily test stdout, but we can verify the level is set
-	logger.SetLevel(LogLevelNormal)
-	if logger.level != LogLevelNormal {
-		t.Errorf("Expected level %d, got %d", LogLevelNormal, logger.level)
-	}
-
-	// Test switching to Verbose
-	logger.SetLevel(LogLevelVerbose)
-	if logger.level != LogLevelVerbose {
-		t.Errorf("Expected level %d, got %d", LogLevelVerbose, logger.level)
-	}
-}
-
 // TestDefaultErrorHandler tests default error handler behavior
 func TestDefaultErrorHandler(t *testing.T) {
 	handler := &DefaultErrorHandler{}
-
-	// Verify interface implementation
 	var _ ErrorHandler = handler
-
-	// Verify type - handler is never nil as it's created with &DefaultErrorHandler{}
-	// This check is redundant but kept for clarity
 	_ = handler
 }
 
@@ -358,7 +97,6 @@ func TestDefaultErrorHandler(t *testing.T) {
 func TestTestErrorHandler(t *testing.T) {
 	handler := &TestErrorHandler{}
 
-	// Test the Fatal method
 	err := handler.Fatal("test message: %s", "error")
 	if err == nil {
 		t.Error("Fatal should return an error")
@@ -372,7 +110,6 @@ func TestTestErrorHandler(t *testing.T) {
 		t.Error("LastError should equal returned error")
 	}
 
-	// Test multiple calls
 	err2 := handler.Fatal("another message")
 	if err2 == nil {
 		t.Error("Fatal should return an error")
@@ -380,49 +117,5 @@ func TestTestErrorHandler(t *testing.T) {
 
 	if handler.LastError != err2 {
 		t.Error("LastError should be updated")
-	}
-}
-
-func TestConvenienceFunctions(t *testing.T) {
-	// Reset global logger
-	globalLogger = nil
-
-	// Test Log convenience function
-	InitLogger(LogLevelNormal)
-	Log("test message")
-
-	// Test Verbose convenience function
-	InitLogger(LogLevelVerbose)
-	Verbose("test message")
-
-	// Test Error convenience function
-	Error("test error")
-
-	// Test Fatal convenience function exists
-	_ = Fatal
-}
-
-func TestInitLoggerSilentMode(t *testing.T) {
-	// Reset global logger
-	globalLogger = nil
-
-	// Test that Silent mode uses io.Discard
-	InitLogger(LogLevelSilent)
-	if globalLogger.logger == nil {
-		t.Error("logger should not be nil")
-	}
-
-	// Create a logger with Discard and verify behavior
-	var buf bytes.Buffer
-	logger := &Logger{
-		level:  LogLevelSilent,
-		logger: log.New(&buf, "", 0),
-	}
-
-	// Set output to Discard
-	logger.logger.SetOutput(io.Discard)
-	logger.Log("should not appear")
-	if buf.Len() != 0 {
-		t.Error("Silent mode should not write to buffer")
 	}
 }

@@ -118,8 +118,12 @@ func TestAPIHealthCheck(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
+	// health-kit LivenessHandler returns {"status":"ok","service":"owlmail"} (StatusHealthy is "ok")
 	if response["status"] != "ok" {
 		t.Errorf("Expected status 'ok', got '%v'", response["status"])
+	}
+	if response["service"] != "owlmail" {
+		t.Errorf("Expected service 'owlmail', got '%v'", response["service"])
 	}
 }
 
