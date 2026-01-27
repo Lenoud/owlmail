@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -8,10 +9,35 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/websocket"
 	"github.com/soulteary/owlmail/internal/types"
 )
+
+// apiHTTPTestHandler wraps *API so httptest.NewServer can serve both normal routes and WebSocket.
+// For /api/v1/ws and /socket.io it calls handleWebSocketHTTP(w, r) so the real connection is upgraded.
+// app.Test(r,-1) would block forever because the WebSocket handler loops on ReadJSON.
+type apiHTTPTestHandler struct{ api *API }
+
+func (h *apiHTTPTestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/v1/ws" || r.URL.Path == "/socket.io" {
+		h.api.handleWebSocketHTTP(w, r)
+		return
+	}
+	resp, err := h.api.app.Test(r, -1)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	for k, v := range resp.Header {
+		for _, vv := range v {
+			w.Header().Add(k, vv)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	_, _ = io.Copy(w, resp.Body)
+	resp.Body.Close()
+}
 
 func TestAPIHandleWebSocket(t *testing.T) {
 	api, server, _ := setupTestAPI(t)
@@ -21,10 +47,8 @@ func TestAPIHandleWebSocket(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	// Create a test server
-	srv := httptest.NewServer(api.router)
+	// Create a test server (Fiber app wrapped as http.Handler)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	// Convert http:// to ws://
@@ -79,10 +103,8 @@ func TestAPIBroadcastMessage(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
 	// Test that broadcastMessage doesn't panic with no clients
-	api.broadcastMessage(gin.H{
+	api.broadcastMessage(fiber.Map{
 		"type":  "test",
 		"value": "test",
 	})
@@ -96,7 +118,7 @@ func TestAPIBroadcastMessage(t *testing.T) {
 	api.broadcastMessage(nil)
 
 	// Test with actual WebSocket connection
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -115,7 +137,7 @@ func TestAPIBroadcastMessage(t *testing.T) {
 	}
 
 	// Broadcast a message
-	testMessage := gin.H{
+	testMessage := fiber.Map{
 		"type":  "test",
 		"value": "broadcast test",
 	}
@@ -169,10 +191,8 @@ func TestAPIBroadcastMessageWithClients(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
 	// Test with empty clients map
-	api.broadcastMessage(gin.H{"type": "test"})
+	api.broadcastMessage(fiber.Map{"type": "test"})
 
 	// Verify the function doesn't panic
 	if api.wsClients == nil {
@@ -180,7 +200,7 @@ func TestAPIBroadcastMessageWithClients(t *testing.T) {
 	}
 
 	// Test with multiple clients
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -224,7 +244,7 @@ func TestAPIBroadcastMessageWithClients(t *testing.T) {
 	}
 
 	// Broadcast message to all clients
-	broadcastMsg := gin.H{"type": "broadcast", "data": "test"}
+	broadcastMsg := fiber.Map{"type": "broadcast", "data": "test"}
 	api.broadcastMessage(broadcastMsg)
 
 	// Both clients should receive the message
@@ -286,16 +306,16 @@ func TestAPIHandleWebSocketRoute(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
 	// Test that the WebSocket route exists
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/ws", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	// WebSocket upgrade should fail in test mode (no upgrade header)
-	// But the route should exist
-	if w.Code == http.StatusNotFound {
+	// WebSocket upgrade should fail without upgrade header, but route should exist (not 404)
+	if resp.StatusCode == http.StatusNotFound {
 		t.Error("WebSocket route should exist")
 	}
 }
@@ -309,16 +329,17 @@ func TestAPIHandleWebSocketUpgradeError(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
 	// Test WebSocket upgrade with invalid request (no upgrade header)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/ws", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
 	// Should fail gracefully (upgrade error is handled internally)
 	// The route exists but upgrade fails without proper headers
-	if w.Code == http.StatusNotFound {
+	if resp.StatusCode == http.StatusNotFound {
 		t.Error("WebSocket route should exist")
 	}
 }
@@ -332,11 +353,9 @@ func TestAPIBroadcastMessageWriteError(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
 	// Test that broadcastMessage handles errors gracefully
 	// Even with no clients, it should not panic
-	api.broadcastMessage(gin.H{
+	api.broadcastMessage(fiber.Map{
 		"type":  "test",
 		"value": "test",
 	})
@@ -350,7 +369,7 @@ func TestAPIBroadcastMessageWriteError(t *testing.T) {
 	api.broadcastMessage(nil)
 
 	// Test with a closed connection to trigger write error
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -381,7 +400,7 @@ func TestAPIBroadcastMessageWriteError(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Try to broadcast - this should trigger write error handling
-	api.broadcastMessage(gin.H{
+	api.broadcastMessage(fiber.Map{
 		"type":  "test",
 		"value": "test",
 	})
@@ -408,9 +427,7 @@ func TestAPIHandleWebSocketPingPong(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -429,7 +446,7 @@ func TestAPIHandleWebSocketPingPong(t *testing.T) {
 	}
 
 	// Send ping message
-	pingMsg := gin.H{"type": "ping"}
+	pingMsg := fiber.Map{"type": "ping"}
 	if err := conn.WriteJSON(pingMsg); err != nil {
 		t.Fatalf("Failed to send ping: %v", err)
 	}
@@ -454,9 +471,7 @@ func TestAPIHandleWebSocketOtherMessages(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -475,7 +490,7 @@ func TestAPIHandleWebSocketOtherMessages(t *testing.T) {
 	}
 
 	// Send a non-ping message (should be ignored but not cause error)
-	otherMsg := gin.H{"type": "other", "data": "test"}
+	otherMsg := fiber.Map{"type": "other", "data": "test"}
 	if err := conn.WriteJSON(otherMsg); err != nil {
 		t.Fatalf("Failed to send message: %v", err)
 	}
@@ -485,7 +500,7 @@ func TestAPIHandleWebSocketOtherMessages(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Connection should still be valid
-	if err := conn.WriteJSON(gin.H{"type": "ping"}); err != nil {
+	if err := conn.WriteJSON(fiber.Map{"type": "ping"}); err != nil {
 		t.Fatalf("Connection should still be valid: %v", err)
 	}
 }
@@ -499,9 +514,7 @@ func TestAPIHandleWebSocketConnectionClose(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -551,9 +564,7 @@ func TestAPIBroadcastMessageWithFailedClient(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"
@@ -594,7 +605,7 @@ func TestAPIBroadcastMessageWithFailedClient(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Broadcast should handle the failed client gracefully
-	broadcastMsg := gin.H{"type": "broadcast", "data": "test"}
+	broadcastMsg := fiber.Map{"type": "broadcast", "data": "test"}
 	api.broadcastMessage(broadcastMsg)
 
 	// The second client should still receive the message
@@ -616,9 +627,7 @@ func TestAPIHandleWebSocketInitialMessageError(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-
-	srv := httptest.NewServer(api.router)
+	srv := httptest.NewServer(&apiHTTPTestHandler{api: api})
 	defer srv.Close()
 
 	wsURL := "ws" + srv.URL[4:] + "/api/v1/ws"

@@ -3,11 +3,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/soulteary/owlmail/internal/mailserver"
 	"github.com/soulteary/owlmail/internal/outgoing"
 )
@@ -20,17 +19,22 @@ func TestAPIGetConfig(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 	if response["version"] == nil {
@@ -46,17 +50,22 @@ func TestAPIGetOutgoingConfig(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings/outgoing", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["enabled"] != false {
@@ -85,17 +94,22 @@ func TestAPIGetOutgoingConfigWithConfig(t *testing.T) {
 	}
 	server.SetOutgoingConfig(outgoingConfig)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings/outgoing", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["enabled"] != true {
@@ -122,14 +136,19 @@ func TestAPIUpdateOutgoingConfig(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -148,11 +167,15 @@ func TestAPIPatchOutgoingConfig(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Then patch it
 	patch := map[string]interface{}{
@@ -160,13 +183,19 @@ func TestAPIPatchOutgoingConfig(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req2.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
+	_ = body2
 
-	if w2.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp2.StatusCode)
 	}
 }
 
@@ -185,17 +214,22 @@ func TestAPIGetConfigWithOutgoing(t *testing.T) {
 	}
 	server.SetOutgoingConfig(outgoingConfig)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["outgoing"] == nil {
@@ -221,17 +255,22 @@ func TestAPIGetConfigWithAuth(t *testing.T) {
 
 	api := NewAPI(server, 1080, "localhost")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["smtpAuth"] == nil {
@@ -278,17 +317,22 @@ func TestAPIGetConfigWithTLS(t *testing.T) {
 
 	api := NewAPI(server, 1080, "localhost")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/settings", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["tls"] == nil {
@@ -321,14 +365,18 @@ func TestAPIUpdateOutgoingConfigInvalidRequest(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -345,14 +393,18 @@ func TestAPIUpdateOutgoingConfigMissingHost(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -370,14 +422,18 @@ func TestAPIUpdateOutgoingConfigInvalidPort(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -395,14 +451,18 @@ func TestAPIUpdateOutgoingConfigPortTooLarge(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -414,14 +474,18 @@ func TestAPIPatchOutgoingConfigInvalidRequest(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -447,14 +511,19 @@ func TestAPIPatchOutgoingConfigAllFields(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -472,14 +541,18 @@ func TestAPIPatchOutgoingConfigMissingHostAfterPatch(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -499,11 +572,15 @@ func TestAPIPatchOutgoingConfigWithExistingConfig(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Then patch it
 	patch := map[string]interface{}{
@@ -512,17 +589,23 @@ func TestAPIPatchOutgoingConfigWithExistingConfig(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req2.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
+	_ = body2
 
-	if w2.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp2.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w2.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body2, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	configResp := response["config"].(map[string]interface{})
@@ -552,11 +635,15 @@ func TestAPIPatchOutgoingConfigWithInvalidPort(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Then patch with invalid port
 	patch := map[string]interface{}{
@@ -564,13 +651,18 @@ func TestAPIPatchOutgoingConfigWithInvalidPort(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req2.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp2.StatusCode)
 	}
 }
 
@@ -589,11 +681,15 @@ func TestAPIPatchOutgoingConfigWithPortTooLarge(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(config)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/settings/outgoing", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Then patch with port too large
 	patch := map[string]interface{}{
@@ -601,13 +697,18 @@ func TestAPIPatchOutgoingConfigWithPortTooLarge(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req2.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp2.StatusCode)
 	}
 }
 
@@ -628,18 +729,23 @@ func TestAPIPatchOutgoingConfigWithNonStringRules(t *testing.T) {
 	}
 	patchBody, _ := json.Marshal(patch)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/settings/outgoing", bytes.NewBuffer(patchBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	configResp := response["config"].(map[string]interface{})

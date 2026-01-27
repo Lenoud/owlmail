@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/emersion/go-message/mail"
-	"github.com/gin-gonic/gin"
 	"github.com/soulteary/owlmail/internal/mailserver"
 	"github.com/soulteary/owlmail/internal/types"
 )
@@ -47,17 +47,21 @@ func TestAPIGetAllEmails(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 	if response["total"] == nil {
@@ -86,17 +90,21 @@ func TestAPIGetEmailByID(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response types.Email
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 	if response.ID != "test-id" {
@@ -104,12 +112,17 @@ func TestAPIGetEmailByID(t *testing.T) {
 	}
 
 	// Test non-existent email
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("GET", "/api/v1/emails/nonexistent", nil)
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp2.StatusCode)
 	}
 }
 
@@ -134,17 +147,21 @@ func TestAPIDeleteEmail(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/test-id", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify deleted
-	_, err := server.GetEmail("test-id")
+	_, err = server.GetEmail("test-id")
 	if err == nil {
 		t.Error("Email should be deleted")
 	}
@@ -179,13 +196,17 @@ func TestAPIDeleteAllEmails(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify all deleted
@@ -216,13 +237,17 @@ func TestAPIReadEmail(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/test-id/read", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify read
@@ -264,13 +289,17 @@ func TestAPIReadAllEmails(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/read", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify all read
@@ -311,17 +340,21 @@ func TestAPIGetEmailStats(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/stats", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 	if response["total"] == nil {
@@ -355,16 +388,20 @@ func TestAPIGetEmailHTML(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/html", nil)
-	api.router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
 	}
-	if w.Header().Get("Content-Type") != "text/html; charset=utf-8" {
-		t.Errorf("Expected Content-Type text/html; charset=utf-8, got %s", w.Header().Get("Content-Type"))
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+	if resp.Header.Get("Content-Type") != "text/html; charset=utf-8" {
+		t.Errorf("Expected Content-Type text/html; charset=utf-8, got %s", resp.Header.Get("Content-Type"))
 	}
 }
 
@@ -403,14 +440,18 @@ func TestAPIBatchDeleteEmails(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/batch", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify deleted
@@ -455,14 +496,18 @@ func TestAPIBatchReadEmails(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/batch/read", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Verify all read
@@ -515,13 +560,17 @@ func TestAPIGetAttachment(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/attachments/test.pdf", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -547,16 +596,20 @@ func TestAPIGetEmailSource(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/source", nil)
-	api.router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
 	}
-	if w.Header().Get("Content-Type") != "text/plain; charset=utf-8" {
-		t.Errorf("Expected Content-Type text/plain; charset=utf-8, got %s", w.Header().Get("Content-Type"))
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+	if resp.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
+		t.Errorf("Expected Content-Type text/plain; charset=utf-8, got %s", resp.Header.Get("Content-Type"))
 	}
 }
 
@@ -582,13 +635,17 @@ func TestAPIDownloadEmail(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/raw", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -638,49 +695,64 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	}
 
 	// Test with query filter
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?q=Subject&limit=10&offset=0", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with from filter
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("GET", "/api/v1/emails?from=from1", nil)
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp2.StatusCode)
 	}
 
 	// Test with to filter
-	w3 := httptest.NewRecorder()
 	req3, _ := http.NewRequest("GET", "/api/v1/emails?to=to1", nil)
-	api.router.ServeHTTP(w3, req3)
-
-	if w3.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w3.Code)
+	resp3, err3 := api.app.Test(req3, -1)
+	if err3 != nil {
+		t.Fatalf("Test request failed: %v", err3)
+	}
+	defer resp3.Body.Close()
+	if resp3.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp3.StatusCode)
 	}
 
 	// Test with read filter
-	w4 := httptest.NewRecorder()
 	req4, _ := http.NewRequest("GET", "/api/v1/emails?read=false", nil)
-	api.router.ServeHTTP(w4, req4)
-
-	if w4.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w4.Code)
+	resp4, err4 := api.app.Test(req4, -1)
+	if err4 != nil {
+		t.Fatalf("Test request failed: %v", err4)
+	}
+	defer resp4.Body.Close()
+	if resp4.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp4.StatusCode)
 	}
 
 	// Test with sort
-	w5 := httptest.NewRecorder()
 	req5, _ := http.NewRequest("GET", "/api/v1/emails?sortBy=subject&sortOrder=asc", nil)
-	api.router.ServeHTTP(w5, req5)
-
-	if w5.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w5.Code)
+	resp5, err5 := api.app.Test(req5, -1)
+	if err5 != nil {
+		t.Fatalf("Test request failed: %v", err5)
+	}
+	defer resp5.Body.Close()
+	if resp5.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp5.StatusCode)
 	}
 }
 
@@ -713,13 +785,17 @@ func TestAPIGetEmailPreviews(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -731,13 +807,17 @@ func TestAPIReloadMailsFromDirectory(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/emails/reload", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -763,14 +843,18 @@ func TestAPIReloadMailsFromDirectoryError(t *testing.T) {
 		t.Fatalf("Failed to remove directory: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/emails/reload", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 500 error when reload fails
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status 500, got %d", w.Code)
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("Expected status 500, got %d", resp.StatusCode)
 	}
 }
 
@@ -814,13 +898,17 @@ func TestAPIGetEmailHTMLNotFound(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/nonexistent/html", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -843,13 +931,17 @@ func TestAPIGetAttachmentNotFound(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/attachments/nonexistent.pdf", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -861,13 +953,17 @@ func TestAPIDownloadEmailNotFound(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/nonexistent/raw", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -890,13 +986,17 @@ func TestAPIDownloadEmailWithoutSubject(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/raw", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -916,13 +1016,17 @@ func TestAPIDownloadEmailWithRawEmailNotFound(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/test-id/raw", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -972,67 +1076,101 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	}
 
 	// Test with query filter
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?q=Subject&limit=10&offset=0", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with from filter
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?from=from1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with to filter
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?to=to1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with read filter
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?read=false", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with dateFrom filter
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?dateFrom="+time.Now().Add(-48*time.Hour).Format("2006-01-02"), nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with dateTo filter
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?dateTo="+time.Now().Format("2006-01-02"), nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test with sortBy
-	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/api/v1/emails/preview?sortBy=subject&sortOrder=asc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err = api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1062,17 +1200,21 @@ func TestAPIGetEmailPreviewsWithPagination(t *testing.T) {
 	}
 
 	// Test with limit and offset
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?limit=2&offset=1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(2) {
@@ -1091,13 +1233,17 @@ func TestAPIGetEmailPreviewsWithInvalidLimit(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?limit=invalid", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1109,13 +1255,17 @@ func TestAPIGetEmailPreviewsWithInvalidOffset(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?offset=invalid", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1127,17 +1277,21 @@ func TestAPIGetEmailPreviewsWithLimitTooLarge(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?limit=2000", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(1000) {
@@ -1153,17 +1307,21 @@ func TestAPIGetEmailPreviewsWithNegativeOffset(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?offset=-1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["offset"] != float64(0) {
@@ -1199,17 +1357,21 @@ func TestAPIGetAllEmailsWithOffsetBeyondTotal(t *testing.T) {
 	}
 
 	// Test with offset beyond total
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?offset=100&limit=10", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	emails := response["emails"].([]interface{})
@@ -1238,17 +1400,21 @@ func TestAPIGetAllEmailsWithStartEqualsEnd(t *testing.T) {
 	}
 
 	// Test with offset=1, limit=1 (start == end == 1)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?offset=1&limit=1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	emails := response["emails"].([]interface{})
@@ -1277,17 +1443,21 @@ func TestAPIGetAllEmailsWithLimitZero(t *testing.T) {
 	}
 
 	// Test with limit=0 (should default to 50)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?limit=0", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(50) {
@@ -1323,17 +1493,21 @@ func TestAPIGetAllEmailsWithLimitOne(t *testing.T) {
 	}
 
 	// Test with limit=1
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?limit=1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	emails := response["emails"].([]interface{})
@@ -1350,13 +1524,17 @@ func TestAPIGetEmailSourceNotFound(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/nonexistent/source", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -1368,13 +1546,17 @@ func TestAPIDeleteEmailNotFound(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/nonexistent", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -1386,13 +1568,17 @@ func TestAPIReadEmailNotFound(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/nonexistent/read", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusNotFound {
-		t.Errorf("Expected status 404, got %d", w.Code)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", resp.StatusCode)
 	}
 }
 
@@ -1404,14 +1590,18 @@ func TestAPIBatchDeleteEmailsInvalidRequest(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/batch", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -1428,14 +1618,18 @@ func TestAPIBatchDeleteEmailsEmptyIDs(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/batch", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -1464,18 +1658,22 @@ func TestAPIBatchDeleteEmailsPartialFailure(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails/batch", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["success"] != float64(1) {
@@ -1494,14 +1692,18 @@ func TestAPIBatchReadEmailsInvalidRequest(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/batch/read", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -1518,14 +1720,18 @@ func TestAPIBatchReadEmailsEmptyIDs(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/batch/read", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -1554,18 +1760,22 @@ func TestAPIBatchReadEmailsPartialFailure(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/batch/read", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["success"] != float64(1) {
@@ -1606,18 +1816,22 @@ func TestAPIBatchReadEmailsAlreadyRead(t *testing.T) {
 	}
 	jsonBody, _ := json.Marshal(requestBody)
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/api/v1/emails/batch/read", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	// Should not count as success if already read
@@ -1648,17 +1862,21 @@ func TestAPIGetAllEmailsPagination(t *testing.T) {
 	}
 
 	// Test pagination
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?limit=2&offset=1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(2) {
@@ -1677,18 +1895,22 @@ func TestAPIGetAllEmailsInvalidLimit(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?limit=invalid", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Should default to 50
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(50) {
@@ -1704,18 +1926,22 @@ func TestAPIGetAllEmailsLargeLimit(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?limit=2000", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Should cap at 1000
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["limit"] != float64(1000) {
@@ -1731,18 +1957,22 @@ func TestAPIGetAllEmailsInvalidOffset(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?offset=invalid", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Should default to 0
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["offset"] != float64(0) {
@@ -1758,18 +1988,22 @@ func TestAPIGetAllEmailsNegativeOffset(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?offset=-1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Should default to 0
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if response["offset"] != float64(0) {
@@ -1805,13 +2039,17 @@ func TestAPIGetAllEmailsSorting(t *testing.T) {
 	}
 
 	// Test sorting by subject ascending
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?sortBy=subject&sortOrder=asc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1843,13 +2081,17 @@ func TestAPIGetAllEmailsSortingByFrom(t *testing.T) {
 	}
 
 	// Test sorting by from
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?sortBy=from&sortOrder=asc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1881,13 +2123,17 @@ func TestAPIGetAllEmailsSortingBySize(t *testing.T) {
 	}
 
 	// Test sorting by size
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?sortBy=size&sortOrder=asc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -1919,24 +2165,33 @@ func TestAPIGetAllEmailsDateFilters(t *testing.T) {
 	}
 
 	// Test dateFrom filter
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	dateFrom := time.Now().Add(-24 * time.Hour).Format("2006-01-02")
 	req, _ := http.NewRequest("GET", "/api/v1/emails?dateFrom="+dateFrom, nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	// Test dateTo filter
-	w2 := httptest.NewRecorder()
 	dateTo := time.Now().Format("2006-01-02")
 	req2, _ := http.NewRequest("GET", "/api/v1/emails?dateTo="+dateTo, nil)
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp2.StatusCode)
 	}
 }
 
@@ -1965,13 +2220,17 @@ func TestAPIGetAllEmailsFilterByCC(t *testing.T) {
 	}
 
 	// Test filter by CC
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?to=cc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2000,13 +2259,17 @@ func TestAPIGetAllEmailsFilterByBCC(t *testing.T) {
 	}
 
 	// Test filter by BCC
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails?to=bcc", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2037,13 +2300,17 @@ func TestAPIGetEmailPreviewsWithHTML(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2078,17 +2345,21 @@ func TestAPIGetEmailPreviewsLongText(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	previews := response["previews"].([]interface{})
@@ -2128,17 +2399,21 @@ func TestAPIExportEmails(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
-	if w.Header().Get("Content-Type") != "application/zip" {
-		t.Errorf("Expected Content-Type application/zip, got %s", w.Header().Get("Content-Type"))
+	if resp.Header.Get("Content-Type") != "application/zip" {
+		t.Errorf("Expected Content-Type application/zip, got %s", resp.Header.Get("Content-Type"))
 	}
 }
 
@@ -2169,13 +2444,17 @@ func TestAPIExportEmailsWithIDs(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export?ids=id1,id2", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2206,13 +2485,17 @@ func TestAPIExportEmailsWithFilters(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export?q=Test", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2224,13 +2507,17 @@ func TestAPIExportEmailsNoEmails(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -2260,14 +2547,18 @@ func TestAPIExportEmailsWithMissingFiles(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 200 (ZIP created with available files, missing files are skipped)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2297,14 +2588,18 @@ func TestAPIExportEmailsWithIDsAndMissingFiles(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export?ids=id1,id2", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 200 (ZIP created with available files)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2337,15 +2632,21 @@ func TestAPIExportEmailsWithIDsWithSpaces(t *testing.T) {
 		t.Fatalf("Failed to save email 2: %v", err)
 	}
 
-	// Test with IDs containing spaces
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/v1/emails/export?ids=id1, id2 , id3", nil)
-	api.router.ServeHTTP(w, req)
+	// Test with IDs containing spaces (use url.Values so query is properly encoded)
+	params := url.Values{}
+	params.Set("ids", "id1, id2 , id3")
+	req, _ := http.NewRequest("GET", "/api/v1/emails/export?"+params.Encode(), nil)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 200 (spaces are trimmed)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2371,14 +2672,18 @@ func TestAPIExportEmailsWithEmptyIDs(t *testing.T) {
 	}
 
 	// Test with empty IDs list (should use filter instead, which returns all emails)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export?ids=", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 200 (empty ids param means use filter, which returns all emails)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2404,14 +2709,18 @@ func TestAPIExportEmailsWithNonExistentIDs(t *testing.T) {
 	}
 
 	// Test with non-existent IDs
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/export?ids=nonexistent1,nonexistent2", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 400 (no emails found)
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", resp.StatusCode)
 	}
 }
 
@@ -2646,14 +2955,18 @@ func TestAPIDeleteAllEmailsError(t *testing.T) {
 	}()
 
 	// Test with empty server (should still work)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/emails", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
 	// Should return 200 even with no emails
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -2686,17 +2999,21 @@ func TestAPIGetEmailPreviewsBoundaryConditions(t *testing.T) {
 	}
 
 	// Test with offset > total (start > total case)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?offset=100&limit=10", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	previews := response["previews"].([]interface{})
@@ -2705,16 +3022,21 @@ func TestAPIGetEmailPreviewsBoundaryConditions(t *testing.T) {
 	}
 
 	// Test with offset + limit > total (end > total case)
-	w2 := httptest.NewRecorder()
 	req2, _ := http.NewRequest("GET", "/api/v1/emails/preview?offset=1&limit=10", nil)
-	api.router.ServeHTTP(w2, req2)
+	resp2, err2 := api.app.Test(req2, -1)
+	if err2 != nil {
+		t.Fatalf("Test request failed: %v", err2)
+	}
+	defer resp2.Body.Close()
+	body2, _ := io.ReadAll(resp2.Body)
+	_ = body2
 
-	if w2.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w2.Code)
+	if resp2.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp2.StatusCode)
 	}
 
 	var response2 map[string]interface{}
-	if err := json.Unmarshal(w2.Body.Bytes(), &response2); err != nil {
+	if err := json.Unmarshal(body2, &response2); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	previews2 := response2["previews"].([]interface{})
@@ -2752,17 +3074,21 @@ func TestAPIGetEmailPreviewsMultipleSpaces(t *testing.T) {
 		t.Fatalf("Failed to save email: %v", err)
 	}
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	previews := response["previews"].([]interface{})
@@ -2797,17 +3123,21 @@ func TestAPIGetEmailPreviewsStartEqualsEnd(t *testing.T) {
 	}
 
 	// Test with offset=1, limit=1 (start == end == 1)
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails/preview?offset=1&limit=1", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = body
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	previews := response["previews"].([]interface{})

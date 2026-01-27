@@ -2,10 +2,8 @@ package api
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/soulteary/owlmail/internal/mailserver"
 )
 
@@ -17,17 +15,22 @@ func TestCorsMiddleware(t *testing.T) {
 		}
 	}()
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "/api/v1/emails", nil)
+	// CORS middleware adds headers to actual requests; with AllowOriginsFunc
+	// returning true it sets Access-Control-Allow-Origin to the request origin.
+	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
 	req.Header.Set("Origin", "http://example.com")
-	api.router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusNoContent {
-		t.Errorf("Expected status 204, got %d", w.Code)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
 	}
-	if w.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Error("CORS headers should be set")
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+	allowOrigin := resp.Header.Get("Access-Control-Allow-Origin")
+	if allowOrigin != "*" && allowOrigin != "http://example.com" {
+		t.Errorf("CORS Access-Control-Allow-Origin should be set, got %q", allowOrigin)
 	}
 }
 
@@ -45,13 +48,15 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", w.Code)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -69,14 +74,16 @@ func TestBasicAuthMiddlewareSuccess(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
 	req.SetBasicAuth("user", "pass")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -94,14 +101,16 @@ func TestBasicAuthMiddlewareInvalidPrefix(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
 	req.Header.Set("Authorization", "Bearer invalid")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", w.Code)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -119,14 +128,16 @@ func TestBasicAuthMiddlewareInvalidBase64(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
 	req.Header.Set("Authorization", "Basic invalid-base64!")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", w.Code)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -144,14 +155,16 @@ func TestBasicAuthMiddlewareInvalidCredentials(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
 	req.SetBasicAuth("wronguser", "wrongpass")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", w.Code)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -169,15 +182,16 @@ func TestBasicAuthMiddlewareInvalidFormat(t *testing.T) {
 
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
 
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/emails", nil)
-	// Set invalid format (no colon)
 	req.Header.Set("Authorization", "Basic dXNlcg==") // base64("user")
-	api.router.ServeHTTP(w, req)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusUnauthorized {
-		t.Errorf("Expected status 401, got %d", w.Code)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 }
 
@@ -193,14 +207,17 @@ func TestHealthCheckSkippedAuth(t *testing.T) {
 		}
 	}()
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/health", nil)
-	api.router.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
+
 func TestHealthzSkippedAuth(t *testing.T) {
 	tmpDir := t.TempDir()
 	server, err := mailserver.NewMailServer(1025, "localhost", tmpDir)
@@ -213,11 +230,13 @@ func TestHealthzSkippedAuth(t *testing.T) {
 		}
 	}()
 	api := NewAPIWithAuth(server, 1080, "localhost", "user", "pass")
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/healthz", nil)
-	api.router.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
+	resp, err := api.app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }

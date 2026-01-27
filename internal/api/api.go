@@ -1,14 +1,15 @@
 package api
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 
 	_ "github.com/emersion/go-message/charset"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gorilla/websocket"
 	"github.com/soulteary/health-kit"
 	"github.com/soulteary/owlmail/internal/mailserver"
@@ -19,7 +20,7 @@ import (
 // API represents the REST API server
 type API struct {
 	mailServer    *mailserver.MailServer
-	router        *gin.Engine
+	app           *fiber.App
 	port          int
 	host          string
 	wsUpgrader    websocket.Upgrader
@@ -69,131 +70,99 @@ func NewAPIWithHTTPS(mailServer *mailserver.MailServer, port int, host, user, pa
 // This function sets up both MailDev-compatible routes (for backward compatibility)
 // and new improved RESTful API routes
 func (api *API) setupRoutes() {
-	router := gin.Default()
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
 
-	// Enable CORS
-	router.Use(corsMiddleware())
+	// Enable CORS (match original: allow all origins, AllowCredentials, AllowHeaders, AllowMethods)
+	// Fiber disallows AllowCredentials with AllowOrigins "*", so use AllowOriginsFunc to allow all.
+	app.Use(cors.New(cors.Config{
+		AllowOriginsFunc: func(origin string) bool { return true },
+		AllowCredentials: true,
+		AllowHeaders:     "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
+		AllowMethods:     "POST, OPTIONS, GET, PUT, DELETE, PATCH",
+	}))
 
 	// HTTP Basic Auth middleware if configured
 	if api.authUser != "" && api.authPassword != "" {
-		router.Use(basicAuthMiddleware(api.authUser, api.authPassword, "/healthz", "/api/v1/health"))
+		app.Use(basicAuthMiddleware(api.authUser, api.authPassword, "/healthz", "/api/v1/health"))
 	}
 
 	// Static files (web UI)
-	router.StaticFile("/style.css", "./web/style.css")
-	router.StaticFile("/app.js", "./web/app.js")
+	app.Get("/style.css", func(c *fiber.Ctx) error { return c.SendFile("./web/style.css") })
+	app.Get("/app.js", func(c *fiber.Ctx) error { return c.SendFile("./web/app.js") })
 
 	// ============================================================================
 	// MailDev-compatible API routes (maintains backward compatibility)
-	// All MailDev compatibility code is in maildev.go
 	// ============================================================================
-	api.setupMailDevCompatibleRoutes(router)
+	api.setupMailDevCompatibleRoutes(app)
 
 	// ============================================================================
 	// New improved RESTful API routes
 	// ============================================================================
-	api.setupImprovedAPIRoutes(router)
-
-	// Serve index.html for root and all non-API routes
-	router.NoRoute(func(c *gin.Context) {
-		// Check if it's an API route
-		if strings.HasPrefix(c.Request.URL.Path, "/email") ||
-			strings.HasPrefix(c.Request.URL.Path, "/config") ||
-			strings.HasPrefix(c.Request.URL.Path, "/healthz") ||
-			strings.HasPrefix(c.Request.URL.Path, "/socket.io") ||
-			strings.HasPrefix(c.Request.URL.Path, "/api/") ||
-			strings.HasPrefix(c.Request.URL.Path, "/style.css") ||
-			strings.HasPrefix(c.Request.URL.Path, "/app.js") {
-			c.Next()
-			return
-		}
-		// Serve index.html for all other routes
-		c.File("./web/index.html")
-	})
+	api.setupImprovedAPIRoutes(app)
 
 	// Root route - serve index.html
-	router.GET("/", func(c *gin.Context) {
-		c.File("./web/index.html")
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendFile("./web/index.html")
 	})
 
-	api.router = router
+	// Serve index.html for all non-API routes (NoRoute equivalent)
+	app.All("*", func(c *fiber.Ctx) error {
+		path := c.Path()
+		if strings.HasPrefix(path, "/email") ||
+			strings.HasPrefix(path, "/config") ||
+			strings.HasPrefix(path, "/healthz") ||
+			strings.HasPrefix(path, "/socket.io") ||
+			strings.HasPrefix(path, "/api/") ||
+			strings.HasPrefix(path, "/style.css") ||
+			strings.HasPrefix(path, "/app.js") {
+			return c.Next()
+		}
+		return c.SendFile("./web/index.html")
+	})
+
+	api.app = app
 }
 
 // setupImprovedAPIRoutes sets up improved RESTful API routes
-// These routes follow better RESTful design principles
-func (api *API) setupImprovedAPIRoutes(router *gin.Engine) {
-	// API v1 routes
-	v1 := router.Group("/api/v1")
-	{
-		// Emails resource (plural, more RESTful)
-		emailsGroup := v1.Group("/emails")
-		{
-			// GET /api/v1/emails - Get all emails with pagination and filtering
-			emailsGroup.GET("", api.getAllEmails)
+func (api *API) setupImprovedAPIRoutes(app *fiber.App) {
+	v1 := app.Group("/api/v1")
 
-			// GET /api/v1/emails/stats - Get email statistics
-			emailsGroup.GET("/stats", api.getEmailStats)
+	// Emails resource
+	emailsGroup := v1.Group("/emails")
+	emailsGroup.Get("", api.getAllEmails)
+	emailsGroup.Get("/stats", api.getEmailStats)
+	emailsGroup.Get("/preview", api.getEmailPreviews)
+	emailsGroup.Get("/export", api.exportEmails)
+	emailsGroup.Delete("", api.deleteAllEmails)
+	emailsGroup.Patch("/read", api.readAllEmails)
+	emailsGroup.Delete("/batch", api.batchDeleteEmails)
+	emailsGroup.Patch("/batch/read", api.batchReadEmails)
+	emailsGroup.Post("/reload", api.reloadMailsFromDirectory)
+	emailsGroup.Get("/:id", api.getEmailByID)
+	emailsGroup.Delete("/:id", api.deleteEmail)
+	emailsGroup.Patch("/:id/read", api.readEmail)
+	emailsGroup.Get("/:id/html", api.getEmailHTML)
+	emailsGroup.Get("/:id/source", api.getEmailSource)
+	emailsGroup.Get("/:id/raw", api.downloadEmail)
+	emailsGroup.Get("/:id/attachments/:filename", api.getAttachment)
+	emailsGroup.Post("/:id/actions/relay", api.relayEmail)
+	emailsGroup.Post("/:id/actions/relay/:relayTo", api.relayEmailWithParam)
 
-			// GET /api/v1/emails/preview - Get email previews (lightweight)
-			emailsGroup.GET("/preview", api.getEmailPreviews)
+	// Settings resource
+	settingsGroup := v1.Group("/settings")
+	settingsGroup.Get("", api.getConfig)
+	settingsGroup.Get("/outgoing", api.getOutgoingConfig)
+	settingsGroup.Put("/outgoing", api.updateOutgoingConfig)
+	settingsGroup.Patch("/outgoing", api.patchOutgoingConfig)
 
-			// GET /api/v1/emails/export - Export emails as ZIP
-			emailsGroup.GET("/export", api.exportEmails)
-
-			// DELETE /api/v1/emails - Delete all emails (more RESTful than /email/all)
-			emailsGroup.DELETE("", api.deleteAllEmails)
-
-			// PATCH /api/v1/emails/read - Mark all emails as read (clearer than /read-all)
-			emailsGroup.PATCH("/read", api.readAllEmails)
-
-			// DELETE /api/v1/emails/batch - Batch delete emails (more RESTful)
-			emailsGroup.DELETE("/batch", api.batchDeleteEmails)
-
-			// PATCH /api/v1/emails/batch/read - Batch mark emails as read
-			emailsGroup.PATCH("/batch/read", api.batchReadEmails)
-
-			// POST /api/v1/emails/reload - Reload emails from directory (POST is more appropriate)
-			emailsGroup.POST("/reload", api.reloadMailsFromDirectory)
-
-			// Individual email routes
-			emailsGroup.GET("/:id", api.getEmailByID)
-			emailsGroup.DELETE("/:id", api.deleteEmail)
-			emailsGroup.PATCH("/:id/read", api.readEmail)
-
-			// Email content routes
-			emailsGroup.GET("/:id/html", api.getEmailHTML)
-			emailsGroup.GET("/:id/source", api.getEmailSource)
-			emailsGroup.GET("/:id/raw", api.downloadEmail) // More semantic than /download
-
-			// Email attachments (plural, more RESTful)
-			emailsGroup.GET("/:id/attachments/:filename", api.getAttachment)
-
-			// Email actions
-			emailsGroup.POST("/:id/actions/relay", api.relayEmail)
-			emailsGroup.POST("/:id/actions/relay/:relayTo", api.relayEmailWithParam)
-		}
-
-		// Settings resource (more semantic than /config)
-		settingsGroup := v1.Group("/settings")
-		{
-			// GET /api/v1/settings - Get all settings
-			settingsGroup.GET("", api.getConfig)
-
-			// Outgoing mail settings
-			settingsGroup.GET("/outgoing", api.getOutgoingConfig)
-			settingsGroup.PUT("/outgoing", api.updateOutgoingConfig)
-			settingsGroup.PATCH("/outgoing", api.patchOutgoingConfig)
-		}
-
-		// Health check (more standard than /healthz)
-		v1.GET("/health", gin.WrapF(health.LivenessHandler("owlmail")))
-
-		// Version info
-		v1.GET("/version", gin.WrapF(version.Handler()))
-
-		// WebSocket (clearer path)
-		v1.GET("/ws", api.handleWebSocket)
-	}
+	// Health check (adaptor for health-kit)
+	v1.Get("/health", adaptor.HTTPHandler(health.LivenessHandler("owlmail")))
+	// Version info (adaptor for version-kit)
+	v1.Get("/version", adaptor.HTTPHandler(version.Handler()))
+	// WebSocket (adaptor for gorilla/websocket Upgrade)
+	v1.Get("/ws", adaptor.HTTPHandlerFunc(api.handleWebSocketHTTP))
 }
 
 // Start starts the API server
@@ -204,35 +173,23 @@ func (api *API) Start() error {
 		if api.httpsCertFile == "" || api.httpsKeyFile == "" {
 			return fmt.Errorf("HTTPS enabled but certificate or key file not provided")
 		}
-
-		// Create HTTP server with TLS config
-		srv := &http.Server{
-			Addr:    addr,
-			Handler: api.router,
-			TLSConfig: &tls.Config{
-				MinVersion: tls.VersionTLS12,
-			},
-		}
-
-		// Logging is handled in main.go
-		return srv.ListenAndServeTLS(api.httpsCertFile, api.httpsKeyFile)
+		return api.app.ListenTLS(addr, api.httpsCertFile, api.httpsKeyFile)
 	}
 
-	// Logging is handled in main.go
-	return api.router.Run(addr)
+	return api.app.Listen(addr)
 }
 
 // setupEventListeners sets up event listeners for WebSocket broadcasting
 func (api *API) setupEventListeners() {
 	api.mailServer.On("new", func(email *types.Email) {
-		api.broadcastMessage(gin.H{
+		api.broadcastMessage(fiber.Map{
 			"type":  "new",
 			"email": email,
 		})
 	})
 
 	api.mailServer.On("delete", func(email *types.Email) {
-		api.broadcastMessage(gin.H{
+		api.broadcastMessage(fiber.Map{
 			"type": "delete",
 			"id":   email.ID,
 		})
@@ -240,85 +197,40 @@ func (api *API) setupEventListeners() {
 }
 
 // setupMailDevCompatibleRoutes sets up MailDev-compatible API routes
-// These routes maintain backward compatibility with MailDev
-func (api *API) setupMailDevCompatibleRoutes(router *gin.Engine) {
+func (api *API) setupMailDevCompatibleRoutes(app *fiber.App) {
 	// Email routes (MailDev compatible)
-	emailGroup := router.Group("/email")
-	{
-		// GET /email - Get all emails with pagination and filtering
-		emailGroup.GET("", api.getAllEmails)
-
-		// GET /email/:id - Get single email by ID
-		emailGroup.GET("/:id", api.getEmailByID)
-
-		// GET /email/:id/html - Get email HTML content
-		emailGroup.GET("/:id/html", api.getEmailHTML)
-
-		// GET /email/:id/attachment/:filename - Download attachment
-		emailGroup.GET("/:id/attachment/:filename", api.getAttachment)
-
-		// GET /email/:id/download - Download raw .eml file
-		emailGroup.GET("/:id/download", api.downloadEmail)
-
-		// GET /email/:id/source - Get email raw source
-		emailGroup.GET("/:id/source", api.getEmailSource)
-
-		// DELETE /email/:id - Delete single email
-		emailGroup.DELETE("/:id", api.deleteEmail)
-
-		// DELETE /email/all - Delete all emails
-		emailGroup.DELETE("/all", api.deleteAllEmails)
-
-		// PATCH /email/read-all - Mark all emails as read
-		emailGroup.PATCH("/read-all", api.readAllEmails)
-
-		// PATCH /email/:id/read - Mark single email as read
-		emailGroup.PATCH("/:id/read", api.readEmail)
-
-		// POST /email/:id/relay - Relay email to SMTP server
-		emailGroup.POST("/:id/relay", api.relayEmail)
-
-		// POST /email/:id/relay/:relayTo - Relay email to SMTP server with specific recipient
-		emailGroup.POST("/:id/relay/:relayTo", api.relayEmailWithParam)
-
-		// GET /email/stats - Get email statistics
-		emailGroup.GET("/stats", api.getEmailStats)
-
-		// GET /email/preview - Get email previews (lightweight)
-		emailGroup.GET("/preview", api.getEmailPreviews)
-
-		// POST /email/batch/delete - Batch delete emails
-		emailGroup.POST("/batch/delete", api.batchDeleteEmails)
-
-		// POST /email/batch/read - Batch mark emails as read
-		emailGroup.POST("/batch/read", api.batchReadEmails)
-
-		// GET /email/export - Export emails as ZIP
-		emailGroup.GET("/export", api.exportEmails)
-	}
+	emailGroup := app.Group("/email")
+	emailGroup.Get("", api.getAllEmails)
+	emailGroup.Get("/:id", api.getEmailByID)
+	emailGroup.Get("/:id/html", api.getEmailHTML)
+	emailGroup.Get("/:id/attachment/:filename", api.getAttachment)
+	emailGroup.Get("/:id/download", api.downloadEmail)
+	emailGroup.Get("/:id/source", api.getEmailSource)
+	emailGroup.Delete("/:id", api.deleteEmail)
+	emailGroup.Delete("/all", api.deleteAllEmails)
+	emailGroup.Patch("/read-all", api.readAllEmails)
+	emailGroup.Patch("/:id/read", api.readEmail)
+	emailGroup.Post("/:id/relay", api.relayEmail)
+	emailGroup.Post("/:id/relay/:relayTo", api.relayEmailWithParam)
+	emailGroup.Get("/stats", api.getEmailStats)
+	emailGroup.Get("/preview", api.getEmailPreviews)
+	emailGroup.Post("/batch/delete", api.batchDeleteEmails)
+	emailGroup.Post("/batch/read", api.batchReadEmails)
+	emailGroup.Get("/export", api.exportEmails)
 
 	// WebSocket route (MailDev compatible)
-	router.GET("/socket.io", api.handleWebSocket)
+	app.Get("/socket.io", adaptor.HTTPHandlerFunc(api.handleWebSocketHTTP))
 
 	// Config routes (MailDev compatible)
-	configGroup := router.Group("/config")
-	{
-		// GET /config - Get all configuration
-		configGroup.GET("", api.getConfig)
-
-		// GET /config/outgoing - Get outgoing mail configuration
-		configGroup.GET("/outgoing", api.getOutgoingConfig)
-
-		// PUT /config/outgoing - Update outgoing mail configuration
-		configGroup.PUT("/outgoing", api.updateOutgoingConfig)
-
-		// PATCH /config/outgoing - Partially update outgoing mail configuration
-		configGroup.PATCH("/outgoing", api.patchOutgoingConfig)
-	}
+	configGroup := app.Group("/config")
+	configGroup.Get("", api.getConfig)
+	configGroup.Get("/outgoing", api.getOutgoingConfig)
+	configGroup.Put("/outgoing", api.updateOutgoingConfig)
+	configGroup.Patch("/outgoing", api.patchOutgoingConfig)
 
 	// Health check route (MailDev compatible)
-	router.GET("/healthz", gin.WrapF(health.LivenessHandler("owlmail")))
+	app.Get("/healthz", adaptor.HTTPHandler(health.LivenessHandler("owlmail")))
 
 	// Reload mails from directory route (MailDev compatible)
-	router.GET("/reloadMailsFromDirectory", api.reloadMailsFromDirectory)
+	app.Get("/reloadMailsFromDirectory", api.reloadMailsFromDirectory)
 }

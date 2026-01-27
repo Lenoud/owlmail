@@ -1,32 +1,29 @@
 package api
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/soulteary/owlmail/internal/outgoing"
 	"github.com/soulteary/version-kit"
 )
 
 // getConfig handles GET /api/v1/settings
-func (api *API) getConfig(c *gin.Context) {
-	config := gin.H{
+func (api *API) getConfig(c *fiber.Ctx) error {
+	config := fiber.Map{
 		"version": version.Default().Version,
-		"smtp": gin.H{
+		"smtp": fiber.Map{
 			"host": api.mailServer.GetHost(),
 			"port": api.mailServer.GetPort(),
 		},
-		"web": gin.H{
+		"web": fiber.Map{
 			"host": api.host,
 			"port": api.port,
 		},
 		"mailDir": api.mailServer.GetMailDir(),
 	}
 
-	// Add outgoing mail configuration if available
 	outgoingConfig := api.mailServer.GetOutgoingConfig()
 	if outgoingConfig != nil {
-		config["outgoing"] = gin.H{
+		config["outgoing"] = fiber.Map{
 			"host":          outgoingConfig.Host,
 			"port":          outgoingConfig.Port,
 			"user":          outgoingConfig.User,
@@ -40,10 +37,9 @@ func (api *API) getConfig(c *gin.Context) {
 		config["outgoing"] = nil
 	}
 
-	// Add SMTP authentication configuration if available
 	authConfig := api.mailServer.GetAuthConfig()
 	if authConfig != nil {
-		config["smtpAuth"] = gin.H{
+		config["smtpAuth"] = fiber.Map{
 			"enabled":  authConfig.Enabled,
 			"username": authConfig.Username,
 		}
@@ -51,10 +47,9 @@ func (api *API) getConfig(c *gin.Context) {
 		config["smtpAuth"] = nil
 	}
 
-	// Add TLS configuration if available
 	tlsConfig := api.mailServer.GetTLSConfig()
 	if tlsConfig != nil {
-		config["tls"] = gin.H{
+		config["tls"] = fiber.Map{
 			"enabled":  tlsConfig.Enabled,
 			"certFile": tlsConfig.CertFile,
 			"keyFile":  tlsConfig.KeyFile,
@@ -63,21 +58,20 @@ func (api *API) getConfig(c *gin.Context) {
 		config["tls"] = nil
 	}
 
-	c.JSON(http.StatusOK, config)
+	return c.JSON(config)
 }
 
 // getOutgoingConfig handles GET /api/v1/settings/outgoing
-func (api *API) getOutgoingConfig(c *gin.Context) {
+func (api *API) getOutgoingConfig(c *fiber.Ctx) error {
 	outgoingConfig := api.mailServer.GetOutgoingConfig()
 	if outgoingConfig == nil {
-		c.JSON(http.StatusOK, gin.H{
+		return c.JSON(fiber.Map{
 			"enabled": false,
 			"message": "Outgoing mail not configured",
 		})
-		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"enabled":       true,
 		"host":          outgoingConfig.Host,
 		"port":          outgoingConfig.Port,
@@ -91,32 +85,26 @@ func (api *API) getOutgoingConfig(c *gin.Context) {
 }
 
 // updateOutgoingConfig handles PUT /api/v1/settings/outgoing
-func (api *API) updateOutgoingConfig(c *gin.Context) {
+func (api *API) updateOutgoingConfig(c *fiber.Ctx) error {
 	var config outgoing.OutgoingConfig
-	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
-		return
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
 	}
 
-	// Validate required fields
 	if config.Host == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeHostRequired, "Host is required"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeHostRequired, "Host is required"))
 	}
 
 	if config.Port <= 0 || config.Port > 65535 {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodePortOutOfRange, "Port must be between 1 and 65535"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodePortOutOfRange, "Port must be between 1 and 65535"))
 	}
 
-	// Update configuration
 	api.mailServer.SetOutgoingConfig(&config)
 
-	// Return response with config field for backward compatibility
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"code":    SuccessCodeConfigUpdated,
 		"message": "Outgoing mail configuration updated",
-		"config": gin.H{
+		"config": fiber.Map{
 			"host":          config.Host,
 			"port":          config.Port,
 			"user":          config.User,
@@ -130,22 +118,17 @@ func (api *API) updateOutgoingConfig(c *gin.Context) {
 }
 
 // patchOutgoingConfig handles PATCH /api/v1/settings/outgoing
-func (api *API) patchOutgoingConfig(c *gin.Context) {
-	// Get current configuration
+func (api *API) patchOutgoingConfig(c *fiber.Ctx) error {
 	currentConfig := api.mailServer.GetOutgoingConfig()
 	if currentConfig == nil {
-		// Create new config if none exists
 		currentConfig = &outgoing.OutgoingConfig{}
 	}
 
-	// Parse partial update
 	var updates map[string]interface{}
-	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
-		return
+	if err := c.BodyParser(&updates); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
 	}
 
-	// Apply updates
 	if host, ok := updates["host"].(string); ok {
 		currentConfig.Host = host
 	}
@@ -184,25 +167,20 @@ func (api *API) patchOutgoingConfig(c *gin.Context) {
 		}
 	}
 
-	// Validate if host is set
 	if currentConfig.Host == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeHostRequired, "Host is required"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeHostRequired, "Host is required"))
 	}
 
 	if currentConfig.Port <= 0 || currentConfig.Port > 65535 {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodePortOutOfRange, "Port must be between 1 and 65535"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodePortOutOfRange, "Port must be between 1 and 65535"))
 	}
 
-	// Update configuration
 	api.mailServer.SetOutgoingConfig(currentConfig)
 
-	// Return response with config field for backward compatibility
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"code":    SuccessCodeConfigUpdated,
 		"message": "Outgoing mail configuration updated",
-		"config": gin.H{
+		"config": fiber.Map{
 			"host":          currentConfig.Host,
 			"port":          currentConfig.Port,
 			"user":          currentConfig.User,

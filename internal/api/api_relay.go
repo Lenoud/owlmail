@@ -1,45 +1,37 @@
 package api
 
 import (
-	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/soulteary/owlmail/internal/common"
 )
 
 // relayEmail handles POST /api/v1/emails/:id/actions/relay
-func (api *API) relayEmail(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) relayEmail(c *fiber.Ctx) error {
+	id := c.Params("id")
 
-	// Get optional relayTo parameter from query or body
 	relayTo := c.Query("relayTo")
 	if relayTo == "" {
 		var body struct {
 			RelayTo string `json:"relayTo"`
 		}
-		if err := c.ShouldBindJSON(&body); err == nil {
+		if err := c.BodyParser(&body); err == nil {
 			relayTo = body.RelayTo
 		}
 	}
 
-	// Get email
 	email, err := api.mailServer.GetEmail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
 	}
 
-	// Relay email
 	var relayErr error
 	if relayTo != "" {
-		// Relay to specific address
 		relayErr = api.mailServer.RelayMailTo(email, relayTo, func(err error) {
 			if err != nil {
 				common.Error("Error relaying email %s to %s: %v", id, relayTo, err)
 			}
 		})
 	} else {
-		// Relay to configured SMTP server
 		relayErr = api.mailServer.RelayMail(email, false, func(err error) {
 			if err != nil {
 				common.Error("Error relaying email %s: %v", id, err)
@@ -48,32 +40,26 @@ func (api *API) relayEmail(c *gin.Context) {
 	}
 
 	if relayErr != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeRelayFailed, relayErr.Error()))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeRelayFailed, relayErr.Error()))
 	}
 
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeEmailRelayed, "Email relayed successfully", gin.H{"relayTo": relayTo}))
+	return c.JSON(SuccessResponse(SuccessCodeEmailRelayed, "Email relayed successfully", fiber.Map{"relayTo": relayTo}))
 }
 
 // relayEmailWithParam handles POST /api/v1/emails/:id/actions/relay/:relayTo
-func (api *API) relayEmailWithParam(c *gin.Context) {
-	id := c.Param("id")
-	relayTo := c.Param("relayTo")
+func (api *API) relayEmailWithParam(c *fiber.Ctx) error {
+	id := c.Params("id")
+	relayTo := c.Params("relayTo")
 
-	// Validate email address format (simple check)
 	if relayTo == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeInvalidEmailAddress, "Invalid email address provided"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeInvalidEmailAddress, "Invalid email address provided"))
 	}
 
-	// Get email
 	email, err := api.mailServer.GetEmail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
 	}
 
-	// Relay email to specific address
 	relayErr := api.mailServer.RelayMailTo(email, relayTo, func(err error) {
 		if err != nil {
 			common.Error("Error relaying email %s to %s: %v", id, relayTo, err)
@@ -81,9 +67,8 @@ func (api *API) relayEmailWithParam(c *gin.Context) {
 	})
 
 	if relayErr != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeRelayFailed, relayErr.Error()))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeRelayFailed, relayErr.Error()))
 	}
 
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeEmailRelayed, "Email relayed successfully", gin.H{"relayTo": relayTo}))
+	return c.JSON(SuccessResponse(SuccessCodeEmailRelayed, "Email relayed successfully", fiber.Map{"relayTo": relayTo}))
 }

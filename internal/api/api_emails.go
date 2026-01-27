@@ -2,16 +2,16 @@ package api
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/soulteary/owlmail/internal/common"
 	"github.com/soulteary/owlmail/internal/types"
 )
@@ -31,18 +31,17 @@ type EmailPreview struct {
 }
 
 // getAllEmails handles GET /api/v1/emails
-func (api *API) getAllEmails(c *gin.Context) {
-	// Get query parameters
-	limitStr := c.DefaultQuery("limit", "50")
-	offsetStr := c.DefaultQuery("offset", "0")
-	query := c.Query("q")                            // Full text search query
-	from := c.Query("from")                          // Filter by sender
-	to := c.Query("to")                              // Filter by recipient
-	dateFrom := c.Query("dateFrom")                  // Filter by date from (YYYY-MM-DD)
-	dateTo := c.Query("dateTo")                      // Filter by date to (YYYY-MM-DD)
-	read := c.Query("read")                          // Filter by read status (true/false)
-	sortBy := c.DefaultQuery("sortBy", "")           // Sort by: time, subject
-	sortOrder := c.DefaultQuery("sortOrder", "desc") // Sort order: asc, desc
+func (api *API) getAllEmails(c *fiber.Ctx) error {
+	limitStr := c.Query("limit", "50")
+	offsetStr := c.Query("offset", "0")
+	query := c.Query("q")
+	from := c.Query("from")
+	to := c.Query("to")
+	dateFrom := c.Query("dateFrom")
+	dateTo := c.Query("dateTo")
+	read := c.Query("read")
+	sortBy := c.Query("sortBy", "")
+	sortOrder := c.Query("sortOrder", "desc")
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 {
@@ -57,23 +56,17 @@ func (api *API) getAllEmails(c *gin.Context) {
 		offset = 0
 	}
 
-	// Get all emails
 	emails := api.mailServer.GetAllEmail()
-
-	// Apply filters
 	filtered := applyEmailFilters(emails, query, from, to, dateFrom, dateTo, read)
 
-	// Apply sorting
 	if sortBy != "" {
 		applyEmailSorting(filtered, sortBy, sortOrder)
 	} else {
-		// Default: sort by time descending
 		sort.Slice(filtered, func(i, j int) bool {
 			return filtered[i].Time.After(filtered[j].Time)
 		})
 	}
 
-	// Apply pagination
 	total := len(filtered)
 	start := offset
 	end := offset + limit
@@ -91,7 +84,7 @@ func (api *API) getAllEmails(c *gin.Context) {
 		paginatedEmails = make([]*types.Email, 0)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -100,146 +93,134 @@ func (api *API) getAllEmails(c *gin.Context) {
 }
 
 // getEmailByID handles GET /api/v1/emails/:id
-func (api *API) getEmailByID(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) getEmailByID(c *fiber.Ctx) error {
+	id := c.Params("id")
 	email, err := api.mailServer.GetEmail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
 	}
-	c.JSON(http.StatusOK, email)
+	return c.JSON(email)
 }
 
 // getEmailHTML handles GET /api/v1/emails/:id/html
-func (api *API) getEmailHTML(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) getEmailHTML(c *fiber.Ctx) error {
+	id := c.Params("id")
 	html, err := api.mailServer.GetEmailHTML(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
 	}
-	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	c.Set("Content-Type", "text/html; charset=utf-8")
+	return c.SendString(html)
 }
 
 // getAttachment handles GET /api/v1/emails/:id/attachments/:filename
-func (api *API) getAttachment(c *gin.Context) {
-	id := c.Param("id")
-	filename := c.Param("filename")
+func (api *API) getAttachment(c *fiber.Ctx) error {
+	id := c.Params("id")
+	filename := c.Params("filename")
 
 	attachmentPath, contentType, err := api.mailServer.GetEmailAttachment(id, filename)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
 	}
 
-	c.File(attachmentPath)
-	c.Header("Content-Type", contentType)
+	c.Set("Content-Type", contentType)
+	return c.SendFile(attachmentPath)
 }
 
 // downloadEmail handles GET /api/v1/emails/:id/raw
-func (api *API) downloadEmail(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) downloadEmail(c *fiber.Ctx) error {
+	id := c.Params("id")
 
 	email, err := api.mailServer.GetEmail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, "Email not found"))
 	}
 
 	emlPath, err := api.mailServer.GetRawEmail(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailFileNotFound, "Email file not found"))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailFileNotFound, "Email file not found"))
 	}
 
-	// Set download headers
 	filename := fmt.Sprintf("%s.eml", email.ID)
 	if email.Subject != "" {
-		// Sanitize filename
 		filename = sanitizeFilename(fmt.Sprintf("%s-%s", email.ID, email.Subject)) + ".eml"
 	}
 
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
-	c.File(emlPath)
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	return c.SendFile(emlPath)
 }
 
 // getEmailSource handles GET /api/v1/emails/:id/source
-func (api *API) getEmailSource(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) getEmailSource(c *fiber.Ctx) error {
+	id := c.Params("id")
 
 	content, err := api.mailServer.GetRawEmailContent(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
 	}
 
-	c.Data(http.StatusOK, "text/plain; charset=utf-8", content)
+	c.Set("Content-Type", "text/plain; charset=utf-8")
+	return c.Send(content)
 }
 
 // deleteEmail handles DELETE /api/v1/emails/:id
-func (api *API) deleteEmail(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) deleteEmail(c *fiber.Ctx) error {
+	id := c.Params("id")
 	if err := api.mailServer.DeleteEmail(id); err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
 	}
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeEmailDeleted, "Email deleted", nil))
+	return c.JSON(SuccessResponse(SuccessCodeEmailDeleted, "Email deleted", nil))
 }
 
 // deleteAllEmails handles DELETE /api/v1/emails
-func (api *API) deleteAllEmails(c *gin.Context) {
+func (api *API) deleteAllEmails(c *fiber.Ctx) error {
 	if err := api.mailServer.DeleteAllEmail(); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse(ErrorCodeInvalidRequest, err.Error()))
-		return
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse(ErrorCodeInvalidRequest, err.Error()))
 	}
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeAllEmailsDeleted, "All emails deleted", nil))
+	return c.JSON(SuccessResponse(SuccessCodeAllEmailsDeleted, "All emails deleted", nil))
 }
 
 // readAllEmails handles PATCH /api/v1/emails/read
-func (api *API) readAllEmails(c *gin.Context) {
+func (api *API) readAllEmails(c *fiber.Ctx) error {
 	count := api.mailServer.ReadAllEmail()
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeAllEmailsMarkedRead, "All emails marked as read", gin.H{"count": count}))
+	return c.JSON(SuccessResponse(SuccessCodeAllEmailsMarkedRead, "All emails marked as read", fiber.Map{"count": count}))
 }
 
 // readEmail handles PATCH /api/v1/emails/:id/read
-func (api *API) readEmail(c *gin.Context) {
-	id := c.Param("id")
+func (api *API) readEmail(c *fiber.Ctx) error {
+	id := c.Params("id")
 	if err := api.mailServer.ReadEmail(id); err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
-		return
+		return c.Status(fiber.StatusNotFound).JSON(ErrorResponse(ErrorCodeEmailNotFound, err.Error()))
 	}
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeEmailMarkedRead, "Email marked as read", gin.H{"id": id}))
+	return c.JSON(SuccessResponse(SuccessCodeEmailMarkedRead, "Email marked as read", fiber.Map{"id": id}))
 }
 
 // getEmailStats handles GET /api/v1/emails/stats
-func (api *API) getEmailStats(c *gin.Context) {
+func (api *API) getEmailStats(c *fiber.Ctx) error {
 	stats := api.mailServer.GetEmailStats()
-	c.JSON(http.StatusOK, stats)
+	return c.JSON(stats)
 }
 
 // reloadMailsFromDirectory handles POST /api/v1/emails/reload
-func (api *API) reloadMailsFromDirectory(c *gin.Context) {
+func (api *API) reloadMailsFromDirectory(c *fiber.Ctx) error {
 	if err := api.mailServer.LoadMailsFromDirectory(); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse(ErrorCodeInvalidRequest, "Failed to reload mails from directory: "+err.Error()))
-		return
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Failed to reload mails from directory: "+err.Error()))
 	}
-
-	c.JSON(http.StatusOK, SuccessResponse(SuccessCodeMailsReloaded, "Mails reloaded from directory successfully", nil))
+	return c.JSON(SuccessResponse(SuccessCodeMailsReloaded, "Mails reloaded from directory successfully", nil))
 }
 
 // getEmailPreviews handles GET /api/v1/emails/preview
-func (api *API) getEmailPreviews(c *gin.Context) {
-	// Get query parameters (same as getAllEmails but return previews)
-	limitStr := c.DefaultQuery("limit", "50")
-	offsetStr := c.DefaultQuery("offset", "0")
+func (api *API) getEmailPreviews(c *fiber.Ctx) error {
+	limitStr := c.Query("limit", "50")
+	offsetStr := c.Query("offset", "0")
 	query := c.Query("q")
 	from := c.Query("from")
 	to := c.Query("to")
 	dateFrom := c.Query("dateFrom")
 	dateTo := c.Query("dateTo")
 	read := c.Query("read")
-	sortBy := c.DefaultQuery("sortBy", "")
-	sortOrder := c.DefaultQuery("sortOrder", "desc")
+	sortBy := c.Query("sortBy", "")
+	sortOrder := c.Query("sortOrder", "desc")
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 {
@@ -254,13 +235,9 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 		offset = 0
 	}
 
-	// Get all emails
 	emails := api.mailServer.GetAllEmail()
-
-	// Apply filters (same logic as getAllEmails)
 	filtered := applyEmailFilters(emails, query, from, to, dateFrom, dateTo, read)
 
-	// Apply sorting (same as getAllEmails)
 	if sortBy != "" {
 		applyEmailSorting(filtered, sortBy, sortOrder)
 	} else {
@@ -269,7 +246,6 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 		})
 	}
 
-	// Apply pagination
 	total := len(filtered)
 	start := offset
 	end := offset + limit
@@ -287,7 +263,6 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 		paginatedEmails = make([]*types.Email, 0)
 	}
 
-	// Convert to previews
 	previews := make([]*EmailPreview, 0, len(paginatedEmails))
 	for _, email := range paginatedEmails {
 		preview := &EmailPreview{
@@ -300,27 +275,22 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 			HasAttachment: len(email.Attachments) > 0,
 		}
 
-		// Get from address
 		if len(email.From) > 0 {
 			preview.From = email.From[0].Address
 		}
 
-		// Get to addresses
 		preview.To = make([]string, 0, len(email.To))
 		for _, addr := range email.To {
 			preview.To = append(preview.To, addr.Address)
 		}
 
-		// Get preview text (first 200 chars)
 		previewText := email.Text
 		if previewText == "" {
-			// Strip HTML tags for preview
 			previewText = email.HTML
 			previewText = strings.ReplaceAll(previewText, "<", " <")
 			previewText = strings.ReplaceAll(previewText, ">", "> ")
 			previewText = strings.ReplaceAll(previewText, "\n", " ")
 			previewText = strings.ReplaceAll(previewText, "\r", " ")
-			// Remove multiple spaces
 			for strings.Contains(previewText, "  ") {
 				previewText = strings.ReplaceAll(previewText, "  ", " ")
 			}
@@ -334,7 +304,7 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 		previews = append(previews, preview)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"total":    total,
 		"limit":    limit,
 		"offset":   offset,
@@ -343,19 +313,17 @@ func (api *API) getEmailPreviews(c *gin.Context) {
 }
 
 // batchDeleteEmails handles DELETE /api/v1/emails/batch
-func (api *API) batchDeleteEmails(c *gin.Context) {
+func (api *API) batchDeleteEmails(c *fiber.Ctx) error {
 	var request struct {
-		IDs []string `json:"ids" binding:"required"`
+		IDs []string `json:"ids"`
 	}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
-		return
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
 	}
 
 	if len(request.IDs) == 0 {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeNoEmailIDsProvided, "No email IDs provided"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeNoEmailIDsProvided, "No email IDs provided"))
 	}
 
 	successCount := 0
@@ -371,8 +339,7 @@ func (api *API) batchDeleteEmails(c *gin.Context) {
 		}
 	}
 
-	// Return response with success/failed fields at root level for backward compatibility
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"code":      SuccessCodeBatchDeleteCompleted,
 		"message":   "Batch delete completed",
 		"success":   successCount,
@@ -383,19 +350,17 @@ func (api *API) batchDeleteEmails(c *gin.Context) {
 }
 
 // batchReadEmails handles PATCH /api/v1/emails/batch/read
-func (api *API) batchReadEmails(c *gin.Context) {
+func (api *API) batchReadEmails(c *fiber.Ctx) error {
 	var request struct {
-		IDs []string `json:"ids" binding:"required"`
+		IDs []string `json:"ids"`
 	}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
-		return
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Invalid request: "+err.Error()))
 	}
 
 	if len(request.IDs) == 0 {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeNoEmailIDsProvided, "No email IDs provided"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeNoEmailIDsProvided, "No email IDs provided"))
 	}
 
 	successCount := 0
@@ -416,8 +381,7 @@ func (api *API) batchReadEmails(c *gin.Context) {
 		}
 	}
 
-	// Return response with success/failed fields at root level for backward compatibility
-	c.JSON(http.StatusOK, gin.H{
+	return c.JSON(fiber.Map{
 		"code":      SuccessCodeBatchReadCompleted,
 		"message":   "Batch read completed",
 		"success":   successCount,
@@ -428,9 +392,8 @@ func (api *API) batchReadEmails(c *gin.Context) {
 }
 
 // exportEmails handles GET /api/v1/emails/export
-func (api *API) exportEmails(c *gin.Context) {
-	// Get query parameters for filtering
-	idsParam := c.Query("ids") // Comma-separated list of IDs
+func (api *API) exportEmails(c *fiber.Ctx) error {
+	idsParam := c.Query("ids")
 	query := c.Query("q")
 	from := c.Query("from")
 	to := c.Query("to")
@@ -438,13 +401,9 @@ func (api *API) exportEmails(c *gin.Context) {
 	dateTo := c.Query("dateTo")
 	read := c.Query("read")
 
-	// Get all emails
 	emails := api.mailServer.GetAllEmail()
-
-	// Filter emails
 	var filtered []*types.Email
 
-	// If IDs are specified, only export those
 	if idsParam != "" {
 		ids := strings.Split(idsParam, ",")
 		idMap := make(map[string]bool)
@@ -457,68 +416,55 @@ func (api *API) exportEmails(c *gin.Context) {
 			}
 		}
 	} else {
-		// Apply filters (same logic as getAllEmails)
 		filtered = applyEmailFilters(emails, query, from, to, dateFrom, dateTo, read)
 	}
 
 	if len(filtered) == 0 {
-		c.JSON(http.StatusBadRequest, ErrorResponse(ErrorCodeNoEmailsToExport, "No emails found to export"))
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(ErrorResponse(ErrorCodeNoEmailsToExport, "No emails found to export"))
 	}
 
-	// Create ZIP file in memory
-	c.Writer.Header().Set("Content-Type", "application/zip")
-	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=emails_%s.zip", time.Now().Format("20060102_150405")))
-	c.Writer.Header().Set("Content-Transfer-Encoding", "binary")
+	var buf bytes.Buffer
+	zipWriter := zip.NewWriter(&buf)
 
-	zipWriter := zip.NewWriter(c.Writer)
-	defer func() {
-		if err := zipWriter.Close(); err != nil {
-			common.Verbose("Failed to close zip writer: %v", err)
-		}
-	}()
-
-	// Add each email file to ZIP
 	for _, email := range filtered {
 		emlPath, err := api.mailServer.GetRawEmail(email.ID)
 		if err != nil {
-			continue // Skip if file not found
+			continue
 		}
 
-		// Read email file
 		emailFile, err := os.Open(emlPath)
 		if err != nil {
 			continue
 		}
 
-		// Create file in ZIP
 		filename := fmt.Sprintf("%s_%s.eml", email.ID, sanitizeFilename(email.Subject))
 		fileWriter, err := zipWriter.Create(filename)
 		if err != nil {
-			if closeErr := emailFile.Close(); closeErr != nil {
-				common.Verbose("Failed to close email file: %v", closeErr)
-			}
+			_ = emailFile.Close()
 			continue
 		}
 
-		// Copy file content
 		_, err = io.Copy(fileWriter, emailFile)
-		if closeErr := emailFile.Close(); closeErr != nil {
-			common.Verbose("Failed to close email file: %v", closeErr)
-		}
+		_ = emailFile.Close()
 		if err != nil {
 			continue
 		}
 	}
 
-	c.Writer.Flush()
+	if err := zipWriter.Close(); err != nil {
+		common.Verbose("Failed to close zip writer: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrorResponse(ErrorCodeInvalidRequest, "Failed to create export"))
+	}
+
+	c.Set("Content-Type", "application/zip")
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=emails_%s.zip", time.Now().Format("20060102_150405")))
+	return c.Send(buf.Bytes())
 }
 
 // applyEmailFilters applies filters to email list
 func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo, read string) []*types.Email {
 	filtered := make([]*types.Email, 0)
 	for _, email := range emails {
-		// Full text search
 		if query != "" {
 			queryLower := strings.ToLower(query)
 			matched := strings.Contains(strings.ToLower(email.Subject), queryLower) ||
@@ -529,7 +475,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 			}
 		}
 
-		// Filter by sender
 		if from != "" {
 			fromLower := strings.ToLower(from)
 			matched := false
@@ -545,11 +490,9 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 			}
 		}
 
-		// Filter by recipient
 		if to != "" {
 			toLower := strings.ToLower(to)
 			matched := false
-			// Check To addresses
 			for _, addr := range email.To {
 				if strings.Contains(strings.ToLower(addr.Address), toLower) ||
 					strings.Contains(strings.ToLower(addr.Name), toLower) {
@@ -557,7 +500,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 					break
 				}
 			}
-			// Check CC addresses
 			if !matched {
 				for _, addr := range email.CC {
 					if strings.Contains(strings.ToLower(addr.Address), toLower) ||
@@ -567,7 +509,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 					}
 				}
 			}
-			// Check BCC addresses
 			if !matched {
 				for _, addr := range email.CalculatedBCC {
 					if strings.Contains(strings.ToLower(addr.Address), toLower) {
@@ -581,7 +522,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 			}
 		}
 
-		// Filter by date range
 		if dateFrom != "" {
 			dateFromTime, err := time.Parse("2006-01-02", dateFrom)
 			if err == nil {
@@ -593,7 +533,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 		if dateTo != "" {
 			dateToTime, err := time.Parse("2006-01-02", dateTo)
 			if err == nil {
-				// Add one day to include the end date
 				dateToTime = dateToTime.Add(24 * time.Hour)
 				if email.Time.After(dateToTime) {
 					continue
@@ -601,7 +540,6 @@ func applyEmailFilters(emails []*types.Email, query, from, to, dateFrom, dateTo,
 			}
 		}
 
-		// Filter by read status
 		if read != "" {
 			readBool := read == "true"
 			if email.Read != readBool {
