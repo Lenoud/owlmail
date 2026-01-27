@@ -217,6 +217,7 @@ All original MailDev API endpoints are preserved to ensure backward compatibilit
 | Method | Path | Description | Improvement |
 |--------|------|-------------|-------------|
 | GET | `/api/v1/health` | Health check | More standard naming (replaces `/healthz`) |
+| GET | `/api/v1/version` | Version info (version-kit) | - |
 | GET | `/api/v1/ws` | WebSocket connection | Clearer path (replaces `/socket.io`) |
 
 ## Frontend Migration
@@ -429,6 +430,7 @@ GET /socket.io
 
 // New API
 GET /api/v1/health
+GET /api/v1/version
 POST /api/v1/emails/reload
 GET /api/v1/ws
 ```

@@ -2,7 +2,7 @@
 
 > 🦉 A Go implementation of a mail development and testing tool, fully compatible with MailDev, providing better performance and richer features
 
-[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MailDev Compatible](https://img.shields.io/badge/MailDev-Compatible-blue.svg)](https://github.com/maildev/maildev)
 [![Go Report Card](https://goreportcard.com/badge/github.com/soulteary/owlmail)](https://goreportcard.com/report/github.com/soulteary/owlmail)
@@ -358,7 +358,7 @@ OwlMail provides a more standardized RESTful API design:
 - `GET /api/v1/health` - Health check
 - `GET /api/v1/ws` - WebSocket connection
 
-For detailed API documentation, see: [API Refactoring Record](./docs/fr/internal/API_Refactoring_Record.md)
+For detailed API documentation, including sub-resources (raw, attachments, relay), see: [API Refactoring Record](./docs/fr/internal/API_Refactoring_Record.md)
 
 ## 🔧 Usage Examples
 
@@ -568,7 +568,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [MailDev](https://github.com/maildev/maildev) - Original project inspiration
 - [emersion/go-smtp](https://github.com/emersion/go-smtp) - SMTP server library
 - [emersion/go-message](https://github.com/emersion/go-message) - Email parsing library
-- [Gin](https://github.com/gin-gonic/gin) - Web framework
+- [Fiber](https://github.com/gofiber/fiber) - Web framework
 - [gorilla/websocket](https://github.com/gorilla/websocket) - WebSocket library
 
 ## 📚 Related Documentation

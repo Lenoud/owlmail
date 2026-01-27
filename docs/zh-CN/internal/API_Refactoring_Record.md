@@ -217,6 +217,7 @@
 | 方法 | 路径 | 描述 | 改进 |
 |--------|------|-------------|-------------|
 | GET | `/api/v1/health` | 健康检查 | 更标准的命名（替代 `/healthz`） |
+| GET | `/api/v1/version` | 版本信息（version-kit） | - |
 | GET | `/api/v1/ws` | WebSocket 连接 | 更清晰的路径（替代 `/socket.io`） |
 
 ## 前端迁移
@@ -429,6 +430,7 @@ GET /socket.io
 
 // 新 API
 GET /api/v1/health
+GET /api/v1/version
 POST /api/v1/emails/reload
 GET /api/v1/ws
 ```

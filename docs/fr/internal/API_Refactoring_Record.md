@@ -2,10 +2,10 @@
 
 > ⚠️ **Document en cours de traduction**
 > 
-> Cette traduction est en cours. Pour l'instant, veuillez consulter la [version anglaise](./API_Refactoring_Record.md) ou d'autres versions disponibles :
-> - [English](./API_Refactoring_Record.md)
-> - [简体中文](./API_Refactoring_Record.zh-CN.md)
-> - [Deutsch](./API_Refactoring_Record.de.md)
+> Cette traduction est en cours. Pour l'instant, veuillez consulter la [version anglaise](../../en/internal/API_Refactoring_Record.md) ou d'autres versions disponibles :
+> - [English](../../en/internal/API_Refactoring_Record.md)
+> - [简体中文](../zh-CN/internal/API_Refactoring_Record.md)
+> - [Deutsch](../../de/internal/API_Refactoring_Record.md)
 > 
 > **Contributions bienvenues** : Si vous souhaitez contribuer à cette traduction, veuillez consulter le [guide de contribution](../../../.github/CONTRIBUTING.md).
 
@@ -25,7 +25,7 @@ Si vous souhaitez aider à traduire ce document :
 
 1. Fork le dépôt
 2. Créez une branche pour votre traduction
-3. Traduisez le contenu de [API_Refactoring_Record.md](./API_Refactoring_Record.md)
+3. Traduisez le contenu de [API_Refactoring_Record.md](../../en/internal/API_Refactoring_Record.md)
 4. Soumettez une Pull Request
 
 Pour plus d'informations, consultez le [guide de contribution](../../../.github/CONTRIBUTING.md).

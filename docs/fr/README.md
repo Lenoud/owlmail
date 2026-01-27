@@ -15,13 +15,13 @@ Bienvenue dans le répertoire de documentation OwlMail. Ce répertoire contient 
 ### Documents principaux
 
 - **[OwlMail × MailDev - Livre blanc complet sur les fonctionnalités, l'API et la migration](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)** (Anglais)
-  - [中文版本](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.zh-CN.md)
+  - [中文版本](../zh-CN/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
   - Une comparaison complète entre OwlMail et MailDev, incluant la compatibilité API, la parité des fonctionnalités et le guide de migration.
 
 ### Documentation interne
 
 - **[Enregistrement de refactorisation API](./internal/API_Refactoring_Record.md)** (Anglais)
-  - [中文版本](./internal/API_Refactoring_Record.zh-CN.md)
+  - [中文版本](../zh-CN/internal/API_Refactoring_Record.md)
   - Documente le processus de refactorisation API des points de terminaison compatibles MailDev vers la nouvelle conception API RESTful (`/api/v1/`).
 
 ## 🌍 Support multilingue
@@ -67,4 +67,4 @@ Lors de l'ajout de nouvelle documentation :
 
 ---
 
-Pour plus d'informations sur OwlMail, veuillez visiter le [README principal](../README.fr.md).
+Pour plus d'informations sur OwlMail, veuillez visiter le [README principal](../../README.fr.md).

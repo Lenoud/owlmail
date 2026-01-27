@@ -2,10 +2,10 @@
 
 > ⚠️ **翻訳中**
 > 
-> この翻訳は進行中です。現在は、[英語版](./API_Refactoring_Record.md)または他の利用可能なバージョンを参照してください：
-> - [English](./API_Refactoring_Record.md)
-> - [简体中文](./API_Refactoring_Record.zh-CN.md)
-> - [Deutsch](./API_Refactoring_Record.de.md)
+> この翻訳は進行中です。現在は、[英語版](../../en/internal/API_Refactoring_Record.md)または他の利用可能なバージョンを参照してください：
+> - [English](../../en/internal/API_Refactoring_Record.md)
+> - [简体中文](../zh-CN/internal/API_Refactoring_Record.md)
+> - [Deutsch](../../de/internal/API_Refactoring_Record.md)
 > 
 > **貢献を歓迎します**：この翻訳に貢献したい場合は、[貢献ガイド](../../../.github/CONTRIBUTING.md)を参照してください。
 
@@ -25,7 +25,7 @@
 
 1. リポジトリをフォーク
 2. 翻訳用のブランチを作成
-3. [API_Refactoring_Record.md](./API_Refactoring_Record.md) の内容を翻訳
+3. [API_Refactoring_Record.md](../../en/internal/API_Refactoring_Record.md) の内容を翻訳
 4. プルリクエストを送信
 
 詳細については、[貢献ガイド](../../../.github/CONTRIBUTING.md)を参照してください。

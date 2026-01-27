@@ -205,6 +205,7 @@ Alle ursprünglichen MailDev API-Endpunkte werden beibehalten, um Rückwärtskom
 | Methode | Pfad | Beschreibung | Verbesserung |
 |--------|------|-------------|-------------|
 | GET | `/api/v1/health` | Gesundheitsprüfung | Standardmäßigere Benennung (ersetzt `/healthz`) |
+| GET | `/api/v1/version` | Versionsinfo (version-kit) | - |
 | GET | `/api/v1/ws` | WebSocket-Verbindung | Klarerer Pfad (ersetzt `/socket.io`) |
 
 ## Frontend-Migration

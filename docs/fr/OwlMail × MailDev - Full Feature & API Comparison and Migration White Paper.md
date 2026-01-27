@@ -4,9 +4,9 @@
 
 > ⚠️ **Document en cours de traduction**
 > 
-> Cette traduction est en cours. Pour l'instant, veuillez consulter la [version anglaise](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md) ou d'autres versions disponibles :
-> - [English](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
-> - [简体中文](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.zh-CN.md)
+> Cette traduction est en cours. Pour l'instant, veuillez consulter la [version anglaise](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md) ou d'autres versions disponibles :
+> - [English](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
+> - [简体中文](../zh-CN/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
 > 
 > **Contributions bienvenues** : Si vous souhaitez contribuer à cette traduction, veuillez consulter le [guide de contribution](../../.github/CONTRIBUTING.md).
 
@@ -27,7 +27,7 @@ Si vous souhaitez aider à traduire ce document :
 
 1. Fork le dépôt
 2. Créez une branche pour votre traduction
-3. Traduisez le contenu de [OwlMail × MailDev - Full Feature & API Comparison and Migration White Paper.md](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
+3. Traduisez le contenu de [OwlMail × MailDev - Full Feature & API Comparison and Migration White Paper.md](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
 4. Soumettez une Pull Request
 
 Pour plus d'informations, consultez le [guide de contribution](../../.github/CONTRIBUTING.md).

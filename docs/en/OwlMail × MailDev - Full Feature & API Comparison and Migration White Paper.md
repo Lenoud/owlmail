@@ -33,8 +33,8 @@ In nearly all scenarios, OwlMail can directly replace MailDev. Only WebSocket cl
 
 | Aspect             | OwlMail                       | MailDev          |
 | ------------------ | ----------------------------- | ---------------- |
-| Language / Runtime | Go 1.24+ (single binary)      | Node.js ≥ 18     |
-| Web Framework      | Gin                           | Express          |
+| Language / Runtime | Go 1.25+ (single binary)      | Node.js ≥ 18     |
+| Web Framework      | Fiber                         | Express          |
 | SMTP Library       | emersion/go-smtp              | smtp-server      |
 | Email Parser       | emersion/go-message           | mailparser-mit   |
 | WebSocket          | gorilla/websocket (native WS) | Socket.IO        |

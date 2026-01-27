@@ -15,13 +15,13 @@ OwlMail ドキュメントディレクトリへようこそ。このディレク
 ### メインドキュメント
 
 - **[OwlMail × MailDev - 機能と API の完全比較および移行ホワイトペーパー](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)** (英語)
-  - [中文版本](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.zh-CN.md)
+  - [中文版本](../zh-CN/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
   - OwlMail と MailDev の包括的な比較。API 互換性、機能パリティ、移行ガイドを含みます。
 
 ### 内部ドキュメント
 
 - **[API リファクタリング記録](./internal/API_Refactoring_Record.md)** (英語)
-  - [中文版本](./internal/API_Refactoring_Record.zh-CN.md)
+  - [中文版本](../zh-CN/internal/API_Refactoring_Record.md)
   - MailDev 互換エンドポイントから新しい RESTful API 設計 (`/api/v1/`) への API リファクタリングプロセスを文書化しています。
 
 ## 🌍 多言語サポート
@@ -67,4 +67,4 @@ OwlMail ドキュメントディレクトリへようこそ。このディレク
 
 ---
 
-OwlMail の詳細については、[メイン README](../README.ja.md) をご覧ください。
+OwlMail の詳細については、[メイン README](../../README.ja.md) をご覧ください。

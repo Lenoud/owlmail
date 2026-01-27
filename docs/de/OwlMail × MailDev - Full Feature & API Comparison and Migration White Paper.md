@@ -6,7 +6,7 @@
 > 
 > Diese Übersetzung ist in Arbeit. Bitte konsultieren Sie vorerst die [englische Version](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md) oder andere verfügbare Versionen:
 > - [English](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
-> - [简体中文](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.zh-CN.md)
+> - [简体中文](../zh-CN/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
 > 
 > **Beiträge willkommen**: Wenn Sie zu dieser Übersetzung beitragen möchten, lesen Sie bitte den [Beitragsleitfaden](../../.github/CONTRIBUTING.md).
 

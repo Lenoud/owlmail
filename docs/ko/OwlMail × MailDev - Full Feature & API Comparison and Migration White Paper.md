@@ -4,9 +4,9 @@
 
 > ⚠️ **번역 진행 중**
 > 
-> 이 번역은 진행 중입니다. 현재는 [영어 버전](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md) 또는 다른 사용 가능한 버전을 참조하세요:
-> - [English](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
-> - [简体中文](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.zh-CN.md)
+> 이 번역은 진행 중입니다. 현재는 [영어 버전](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md) 또는 다른 사용 가능한 버전을 참조하세요:
+> - [English](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
+> - [简体中文](../zh-CN/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)
 > 
 > **기여를 환영합니다**: 이 번역에 기여하고 싶으시다면 [기여 가이드](../../.github/CONTRIBUTING.md)를 참조하세요.
 
@@ -27,7 +27,7 @@
 
 1. 저장소 포크
 2. 번역용 브랜치 생성
-3. [OwlMail × MailDev - Full Feature & API Comparison and Migration White Paper.md](./OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)의 내용 번역
+3. [OwlMail × MailDev - Full Feature & API Comparison and Migration White Paper.md](../en/OwlMail%20×%20MailDev%20-%20Full%20Feature%20&%20API%20Comparison%20and%20Migration%20White%20Paper.md)의 내용 번역
 4. Pull Request 제출
 
 자세한 내용은 [기여 가이드](../../.github/CONTRIBUTING.md)를 참조하세요.

@@ -31,8 +31,8 @@
 
 | 方面        | OwlMail                  | MailDev        |
 | --------- | ------------------------ | -------------- |
-| 语言/运行时    | Go 1.24+（单一二进制）          | Node.js ≥ 18   |
-| Web 框架    | Gin                      | Express        |
+| 语言/运行时    | Go 1.25+（单一二进制）          | Node.js ≥ 18   |
+| Web 框架    | Fiber                    | Express        |
 | SMTP 库    | emersion/go-smtp         | smtp-server    |
 | 邮件解析      | emersion/go-message      | mailparser-mit |
 | WebSocket | gorilla/websocket（原生 WS） | Socket.IO      |

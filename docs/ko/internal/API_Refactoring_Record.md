@@ -2,10 +2,10 @@
 
 > ⚠️ **번역 진행 중**
 > 
-> 이 번역은 진행 중입니다. 현재는 [영어 버전](./API_Refactoring_Record.md) 또는 다른 사용 가능한 버전을 참조하세요:
-> - [English](./API_Refactoring_Record.md)
-> - [简体中文](./API_Refactoring_Record.zh-CN.md)
-> - [Deutsch](./API_Refactoring_Record.de.md)
+> 이 번역은 진행 중입니다. 현재는 [영어 버전](../../en/internal/API_Refactoring_Record.md) 또는 다른 사용 가능한 버전을 참조하세요:
+> - [English](../../en/internal/API_Refactoring_Record.md)
+> - [简体中文](../zh-CN/internal/API_Refactoring_Record.md)
+> - [Deutsch](../../de/internal/API_Refactoring_Record.md)
 > 
 > **기여를 환영합니다**: 이 번역에 기여하고 싶으시다면 [기여 가이드](../../../.github/CONTRIBUTING.md)를 참조하세요.
 
@@ -25,7 +25,7 @@
 
 1. 저장소 포크
 2. 번역용 브랜치 생성
-3. [API_Refactoring_Record.md](./API_Refactoring_Record.md)의 내용 번역
+3. [API_Refactoring_Record.md](../../en/internal/API_Refactoring_Record.md)의 내용 번역
 4. Pull Request 제출
 
 자세한 내용은 [기여 가이드](../../../.github/CONTRIBUTING.md)를 참조하세요.
