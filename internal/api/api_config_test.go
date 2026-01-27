@@ -24,7 +24,7 @@ func TestAPIGetConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -55,7 +55,7 @@ func TestAPIGetOutgoingConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -99,7 +99,7 @@ func TestAPIGetOutgoingConfigWithConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -142,7 +142,7 @@ func TestAPIUpdateOutgoingConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -173,7 +173,7 @@ func TestAPIPatchOutgoingConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -189,7 +189,7 @@ func TestAPIPatchOutgoingConfig(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 	_ = body2
@@ -219,7 +219,7 @@ func TestAPIGetConfigWithOutgoing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -260,7 +260,7 @@ func TestAPIGetConfigWithAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -322,7 +322,7 @@ func TestAPIGetConfigWithTLS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -371,7 +371,7 @@ func TestAPIUpdateOutgoingConfigInvalidRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -399,7 +399,7 @@ func TestAPIUpdateOutgoingConfigMissingHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -428,7 +428,7 @@ func TestAPIUpdateOutgoingConfigInvalidPort(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -457,7 +457,7 @@ func TestAPIUpdateOutgoingConfigPortTooLarge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -480,7 +480,7 @@ func TestAPIPatchOutgoingConfigInvalidRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -517,7 +517,7 @@ func TestAPIPatchOutgoingConfigAllFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body
@@ -547,7 +547,7 @@ func TestAPIPatchOutgoingConfigMissingHostAfterPatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -578,7 +578,7 @@ func TestAPIPatchOutgoingConfigWithExistingConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -595,7 +595,7 @@ func TestAPIPatchOutgoingConfigWithExistingConfig(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 	_ = body2
@@ -641,7 +641,7 @@ func TestAPIPatchOutgoingConfigWithInvalidPort(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -657,7 +657,7 @@ func TestAPIPatchOutgoingConfigWithInvalidPort(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -687,7 +687,7 @@ func TestAPIPatchOutgoingConfigWithPortTooLarge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -703,7 +703,7 @@ func TestAPIPatchOutgoingConfigWithPortTooLarge(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -735,7 +735,7 @@ func TestAPIPatchOutgoingConfigWithNonStringRules(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 	_ = body

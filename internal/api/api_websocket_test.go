@@ -36,7 +36,7 @@ func (h *apiHTTPTestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestAPIHandleWebSocket(t *testing.T) {
@@ -312,7 +312,7 @@ func TestAPIHandleWebSocketRoute(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// WebSocket upgrade should fail without upgrade header, but route should exist (not 404)
 	if resp.StatusCode == http.StatusNotFound {
@@ -335,7 +335,7 @@ func TestAPIHandleWebSocketUpgradeError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should fail gracefully (upgrade error is handled internally)
 	// The route exists but upgrade fails without proper headers

@@ -106,7 +106,7 @@ func TestAPIHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
@@ -169,7 +169,7 @@ func TestAPISetupRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if api.app == nil {
 		t.Error("App should be configured")
 	}
@@ -182,7 +182,7 @@ func TestAPISetupRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	if resp3.StatusCode != http.StatusOK {
 		t.Errorf("API route should work, got status %d", resp3.StatusCode)
 	}

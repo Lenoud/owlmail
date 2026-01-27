@@ -52,7 +52,7 @@ func TestAPIGetAllEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -95,7 +95,7 @@ func TestAPIGetEmailByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -117,7 +117,7 @@ func TestAPIGetEmailByID(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -152,7 +152,7 @@ func TestAPIDeleteEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -201,7 +201,7 @@ func TestAPIDeleteAllEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -242,7 +242,7 @@ func TestAPIReadEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -294,7 +294,7 @@ func TestAPIReadAllEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -345,7 +345,7 @@ func TestAPIGetEmailStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -393,7 +393,7 @@ func TestAPIGetEmailHTML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -446,7 +446,7 @@ func TestAPIBatchDeleteEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -502,7 +502,7 @@ func TestAPIBatchReadEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -565,7 +565,7 @@ func TestAPIGetAttachment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -601,7 +601,7 @@ func TestAPIGetEmailSource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -640,7 +640,7 @@ func TestAPIDownloadEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -700,7 +700,7 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -714,7 +714,7 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -728,7 +728,7 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	if err3 != nil {
 		t.Fatalf("Test request failed: %v", err3)
 	}
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	if resp3.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp3.StatusCode)
 	}
@@ -739,7 +739,7 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	if err4 != nil {
 		t.Fatalf("Test request failed: %v", err4)
 	}
-	defer resp4.Body.Close()
+	defer func() { _ = resp4.Body.Close() }()
 	if resp4.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp4.StatusCode)
 	}
@@ -750,7 +750,7 @@ func TestAPIGetAllEmailsWithFilters(t *testing.T) {
 	if err5 != nil {
 		t.Fatalf("Test request failed: %v", err5)
 	}
-	defer resp5.Body.Close()
+	defer func() { _ = resp5.Body.Close() }()
 	if resp5.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp5.StatusCode)
 	}
@@ -790,7 +790,7 @@ func TestAPIGetEmailPreviews(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -812,7 +812,7 @@ func TestAPIReloadMailsFromDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -848,7 +848,7 @@ func TestAPIReloadMailsFromDirectoryError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -903,7 +903,7 @@ func TestAPIGetEmailHTMLNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -936,7 +936,7 @@ func TestAPIGetAttachmentNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -958,7 +958,7 @@ func TestAPIDownloadEmailNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -991,7 +991,7 @@ func TestAPIDownloadEmailWithoutSubject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1021,7 +1021,7 @@ func TestAPIDownloadEmailWithRawEmailNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1081,7 +1081,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1095,7 +1095,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1109,7 +1109,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1123,7 +1123,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1137,7 +1137,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1151,7 +1151,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1165,7 +1165,7 @@ func TestAPIGetEmailPreviewsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ = io.ReadAll(resp.Body)
 	_ = body
 
@@ -1205,7 +1205,7 @@ func TestAPIGetEmailPreviewsWithPagination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1238,7 +1238,7 @@ func TestAPIGetEmailPreviewsWithInvalidLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1260,7 +1260,7 @@ func TestAPIGetEmailPreviewsWithInvalidOffset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1282,7 +1282,7 @@ func TestAPIGetEmailPreviewsWithLimitTooLarge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1312,7 +1312,7 @@ func TestAPIGetEmailPreviewsWithNegativeOffset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1362,7 +1362,7 @@ func TestAPIGetAllEmailsWithOffsetBeyondTotal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1405,7 +1405,7 @@ func TestAPIGetAllEmailsWithStartEqualsEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1448,7 +1448,7 @@ func TestAPIGetAllEmailsWithLimitZero(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1498,7 +1498,7 @@ func TestAPIGetAllEmailsWithLimitOne(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1529,7 +1529,7 @@ func TestAPIGetEmailSourceNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1551,7 +1551,7 @@ func TestAPIDeleteEmailNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1573,7 +1573,7 @@ func TestAPIReadEmailNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1596,7 +1596,7 @@ func TestAPIBatchDeleteEmailsInvalidRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1624,7 +1624,7 @@ func TestAPIBatchDeleteEmailsEmptyIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1664,7 +1664,7 @@ func TestAPIBatchDeleteEmailsPartialFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1698,7 +1698,7 @@ func TestAPIBatchReadEmailsInvalidRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1726,7 +1726,7 @@ func TestAPIBatchReadEmailsEmptyIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1766,7 +1766,7 @@ func TestAPIBatchReadEmailsPartialFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1822,7 +1822,7 @@ func TestAPIBatchReadEmailsAlreadyRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1867,7 +1867,7 @@ func TestAPIGetAllEmailsPagination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1900,7 +1900,7 @@ func TestAPIGetAllEmailsInvalidLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1931,7 +1931,7 @@ func TestAPIGetAllEmailsLargeLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1962,7 +1962,7 @@ func TestAPIGetAllEmailsInvalidOffset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -1993,7 +1993,7 @@ func TestAPIGetAllEmailsNegativeOffset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2044,7 +2044,7 @@ func TestAPIGetAllEmailsSorting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2086,7 +2086,7 @@ func TestAPIGetAllEmailsSortingByFrom(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2128,7 +2128,7 @@ func TestAPIGetAllEmailsSortingBySize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2171,7 +2171,7 @@ func TestAPIGetAllEmailsDateFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2186,7 +2186,7 @@ func TestAPIGetAllEmailsDateFilters(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -2225,7 +2225,7 @@ func TestAPIGetAllEmailsFilterByCC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2264,7 +2264,7 @@ func TestAPIGetAllEmailsFilterByBCC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2305,7 +2305,7 @@ func TestAPIGetEmailPreviewsWithHTML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2350,7 +2350,7 @@ func TestAPIGetEmailPreviewsLongText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2404,7 +2404,7 @@ func TestAPIExportEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2449,7 +2449,7 @@ func TestAPIExportEmailsWithIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2490,7 +2490,7 @@ func TestAPIExportEmailsWithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2512,7 +2512,7 @@ func TestAPIExportEmailsNoEmails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2552,7 +2552,7 @@ func TestAPIExportEmailsWithMissingFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2593,7 +2593,7 @@ func TestAPIExportEmailsWithIDsAndMissingFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2640,7 +2640,7 @@ func TestAPIExportEmailsWithIDsWithSpaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2677,7 +2677,7 @@ func TestAPIExportEmailsWithEmptyIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2714,7 +2714,7 @@ func TestAPIExportEmailsWithNonExistentIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -2960,7 +2960,7 @@ func TestAPIDeleteAllEmailsError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -3004,7 +3004,7 @@ func TestAPIGetEmailPreviewsBoundaryConditions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -3027,7 +3027,7 @@ func TestAPIGetEmailPreviewsBoundaryConditions(t *testing.T) {
 	if err2 != nil {
 		t.Fatalf("Test request failed: %v", err2)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	body2, _ := io.ReadAll(resp2.Body)
 	_ = body2
 
@@ -3079,7 +3079,7 @@ func TestAPIGetEmailPreviewsMultipleSpaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 
@@ -3128,7 +3128,7 @@ func TestAPIGetEmailPreviewsStartEqualsEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	_ = body
 

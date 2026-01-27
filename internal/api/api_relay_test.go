@@ -37,7 +37,7 @@ func TestAPIRelayEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -76,7 +76,7 @@ func TestAPIRelayEmailWithBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -109,7 +109,7 @@ func TestAPIRelayEmailWithoutRelayTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -130,7 +130,7 @@ func TestAPIRelayEmailNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("Expected status 404, got %d", resp.StatusCode)
@@ -162,7 +162,7 @@ func TestAPIRelayEmailWithParam(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -196,7 +196,7 @@ func TestAPIRelayEmailWithParamEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// The route might redirect or return 400, both are acceptable
 	// The important thing is that it doesn't succeed with empty param
@@ -218,7 +218,7 @@ func TestAPIRelayEmailWithParamNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("Expected status 404, got %d", resp.StatusCode)
@@ -256,7 +256,7 @@ func TestAPIRelayEmailWithBodyButNoRelayTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -290,7 +290,7 @@ func TestAPIRelayEmailWithInvalidBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 or 400 depending on relay configuration (invalid JSON is ignored)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusBadRequest {
@@ -325,7 +325,7 @@ func TestAPIRelayEmailWithParamEmptyString(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Test request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 400 for empty/invalid email address
 	// Note: The route might redirect or return different status, but validation should catch it
