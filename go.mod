@@ -5,14 +5,14 @@ go 1.25
 require (
 	github.com/emersion/go-message v0.18.2
 	github.com/emersion/go-smtp v0.24.0
-	github.com/gofiber/fiber/v2 v2.52.10
+	github.com/gofiber/fiber/v2 v2.52.11
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/soulteary/cli-kit v1.2.0
+	github.com/soulteary/cli-kit v1.2.1
 	github.com/soulteary/health-kit v1.0.0
-	github.com/soulteary/logger-kit v1.0.0
-	github.com/soulteary/version-kit v1.0.0
+	github.com/soulteary/logger-kit v1.1.0
+	github.com/soulteary/version-kit v1.0.1
 )
 
 require (
