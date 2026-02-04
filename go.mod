@@ -9,10 +9,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/soulteary/cli-kit v1.2.1
-	github.com/soulteary/health-kit v1.0.0
-	github.com/soulteary/logger-kit v1.1.0
-	github.com/soulteary/version-kit v1.0.1
+	github.com/soulteary/cli-kit v1.3.1
+	github.com/soulteary/health-kit v1.1.0
+	github.com/soulteary/logger-kit v1.3.0
+	github.com/soulteary/version-kit v1.1.0
 )
 
 require (
@@ -20,7 +20,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.4.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.5.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
