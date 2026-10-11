@@ -922,15 +922,15 @@ test("release history and generated reports avoid stale documentation", () => {
   const report = fs.readFileSync(path.join(root, ".github/goreportcard-report.md"), "utf8");
   assert.doesNotMatch(report, /\bLine \d+:/, "Go Report Card keeps stale source line numbers");
   assert.ok(report.includes("exact analyzed commit"));
-  const workflow = fs.readFileSync(path.join(root, ".github/workflows/go-reportcard.yml"), "utf8");
-  assert.ok(workflow.includes("branches:"));
-  assert.ok(workflow.includes("- main"));
-  assert.ok(workflow.includes("'**/*.go'"));
-  assert.ok(workflow.includes('report: "false"'));
+  const workflow = fs.readFileSync(path.join(root, ".github/workflows/go-quality-reports.yml"), "utf8");
+  assert.ok(workflow.includes("tags:"));
+  assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.ok(!workflow.includes("branches:"));
+  assert.ok(workflow.includes('report: "true"'));
   assert.ok(workflow.includes('commit: "false"'));
-  assert.ok(workflow.includes('version: "v1.0.0"'));
-  assert.ok(workflow.includes("git add .github/goreportcard.svg"));
-  assert.ok(!workflow.includes("[skip ci]"));
+  assert.ok(workflow.includes('version: "v1.1.3"'));
+  assert.ok(workflow.includes("needs.reports.outputs.source_sha"));
+  assert.ok(workflow.includes("[skip ci]"));
 
   const ciWorkflow = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
   const pushTrigger = ciWorkflow.slice(ciWorkflow.indexOf("  push:"), ciWorkflow.indexOf("  pull_request:"));
