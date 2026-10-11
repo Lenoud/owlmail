@@ -354,6 +354,9 @@ func (api *API) setupImprovedAPIRoutes(app *fiber.App) {
 	// Emails resource
 	emailsGroup := v1.Group("/emails")
 	emailsGroup.Get("", api.getAllEmails)
+	emailsGroup.Get("/cursor", api.getDeliveryCursor)
+	emailsGroup.Post("/wait", api.waitDeliveries)
+	v1.Delete("/test-runs/:runID/emails", api.deleteTestRunEmails)
 	emailsGroup.Get("/stats", api.getEmailStats)
 	emailsGroup.Get("/preview", api.getEmailPreviews)
 	emailsGroup.Get("/export", api.exportEmails)
@@ -362,6 +365,7 @@ func (api *API) setupImprovedAPIRoutes(app *fiber.App) {
 	emailsGroup.Delete("/batch", api.batchDeleteEmails)
 	emailsGroup.Patch("/batch/read", api.batchReadEmails)
 	emailsGroup.Post("/reload", api.reloadMailsFromDirectory)
+	emailsGroup.Post("/:id/check", api.checkEmail)
 	emailsGroup.Get("/:id", api.getEmailByID)
 	emailsGroup.Delete("/:id", api.deleteEmail)
 	emailsGroup.Patch("/:id/read", api.readEmail)
