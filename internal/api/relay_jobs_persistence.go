@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -146,7 +147,29 @@ func validateRelayJobPersistenceBudget(job relayJob) error {
 	return nil
 }
 
+func (store *relayJobStore) recordPersistenceResultLocked(id string, err error) {
+	if store.persistenceErrors == nil {
+		store.persistenceErrors = make(map[string]error)
+	}
+	if err != nil {
+		store.persistenceErrors[id] = err
+	} else {
+		delete(store.persistenceErrors, id)
+	}
+	unresolved := make([]error, 0, len(store.persistenceErrors))
+	for _, failure := range store.persistenceErrors {
+		unresolved = append(unresolved, failure)
+	}
+	store.lastPersistenceErr = errors.Join(unresolved...)
+}
+
 func (store *relayJobStore) persistLocked(job relayJob) error {
+	err := store.persistJobLocked(job)
+	store.recordPersistenceResultLocked(job.ID, err)
+	return err
+}
+
+func (store *relayJobStore) persistJobLocked(job relayJob) error {
 	if store.directory == "" {
 		return nil
 	}
@@ -203,14 +226,19 @@ func syncRelayJobDirectory(path string) error {
 }
 
 func (store *relayJobStore) removePersistedLocked(id string) error {
+	err := store.removeJobLocked(id)
+	store.recordPersistenceResultLocked(id, err)
+	return err
+}
+
+func (store *relayJobStore) removeJobLocked(id string) error {
 	if store.directory == "" {
 		return nil
 	}
 	if err := os.Remove(filepath.Join(store.directory, id+".json")); err != nil {
-		if os.IsNotExist(err) {
-			return nil
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("remove relay job: %w", err)
 		}
-		return fmt.Errorf("remove relay job: %w", err)
 	}
 	if err := store.syncDirectory(store.directory); err != nil {
 		return fmt.Errorf("sync relay job removal: %w", err)

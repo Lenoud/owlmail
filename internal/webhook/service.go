@@ -34,10 +34,14 @@ type deliveryJob struct {
 	ID         string       `json:"id"`
 	EnqueuedAt time.Time    `json:"enqueuedAt"`
 	Email      *types.Email `json:"email"`
+	Targets    []string     `json:"targets,omitempty"`
+	RetryOf    string       `json:"retryOf,omitempty"`
 }
 
 // Service owns webhook queue workers and their cancellation/drain lifecycle.
 type Service struct {
+	history         *deliveryHistory
+	replays         sync.Map
 	dispatcher      *Dispatcher
 	queue           deliveryQueue
 	memoryQueue     chan deliveryJob
@@ -104,6 +108,13 @@ func NewService(dispatcher *Dispatcher, options ServiceOptions) (*Service, error
 	} else {
 		service.memoryQueue = make(chan deliveryJob, defaultMemoryQueueSize)
 	}
+	history, err := newDeliveryHistory(options.SpoolDir)
+	if err != nil {
+		// Diagnostic history must never take the delivery service offline.
+		// Preserve the recovery error separately from subsequent write health.
+		history.recoveryErr = err
+	}
+	service.history = history
 	service.accepting = true
 	service.start()
 	return service, nil
@@ -452,7 +463,7 @@ func (service *Service) isAccepting() bool {
 
 func (service *Service) deliver(job deliveryJob, receipt *queueReceipt) {
 	stopLease := service.startLeaseHeartbeat(receipt)
-	results := service.dispatcher.DispatchDelivery(service.ctx, job.Email, job.ID)
+	results := service.dispatcher.dispatchTargets(service.ctx, job.Email, job.ID, job.Targets)
 	stopLease()
 	failed := false
 	for _, result := range results {
@@ -472,6 +483,10 @@ func (service *Service) deliver(job deliveryJob, receipt *queueReceipt) {
 			results = append(results, Result{Err: err})
 		}
 	}
+	if service.history != nil {
+		service.history.record(job, results)
+	}
+	service.replays.Delete(job.ID)
 	service.report(job.ID, results)
 }
 
@@ -541,7 +556,15 @@ func (service *Service) Close() error {
 			service.closeErr = fmt.Errorf("webhook drain exceeded %s", service.shutdownTimeout)
 			service.cancel()
 			service.releaseAllStagedHandoffs()
-			<-drained
+			// Filesystem operations cannot be canceled. Let admitted work finish
+			// and clean up asynchronously rather than extending the deadline.
+			go func() {
+				<-drained
+				if service.queue != nil {
+					_ = service.queue.Close()
+				}
+			}()
+			return
 		}
 		service.cancel()
 		if service.queue != nil {
