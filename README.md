@@ -64,21 +64,9 @@ fits each workflow:
   use the [sendmail guide](./docs/en/Sendmail.md) for legacy programs. Source and
   browser tests use Bun; the deployed binary needs no Go, Bun, or Node.js runtime.
 
-## 🆕 OwlMail 0.10.0
+## OwlMail 0.10.1
 
-`v0.10.0` is the current stable release, and it is a security release. The Web
-UI, REST API, WebSocket stream, and read-only MCP endpoint now validate the
-browser `Origin` header by default; captured mail is no longer written into a
-world-listable directory; and the implicit-TLS listener port is configurable
-instead of fixed at a privileged port it often could not bind. Runtime APIs and
-storage formats remain compatible with 0.9.0, but three changes are visible on
-upgrade — read the release notes before deploying.
-
-All installation examples below pin `ghcr.io/soulteary/owlmail:0.10.0`.
-For repeatable CI and production-like test environments, prefer the exact
-version or `ghcr.io/soulteary/owlmail@sha256:<digest>` over moving tags.
-See [the 0.10.0 release notes](./docs/en/Release-0.10.0.md) and
-[CHANGELOG.md](./CHANGELOG.md) for the complete contract.
+`v0.10.1` is the current stable maintenance release. It fixes a plain SMTP listener startup/shutdown race and updates the Go toolchain to 1.27.2, soulteary kits, and third-party dependencies. Runtime APIs and storage formats remain compatible with 0.10.0. The security protections introduced in 0.10.0 remain enabled. See [the 0.10.1 release notes](./docs/en/Release-0.10.1.md) · [0.10.0 release notes](./docs/en/Release-0.10.0.md).
 
 > [!IMPORTANT]
 > OwlMail is built for development, testing, CI, and trusted internal networks.
@@ -93,7 +81,7 @@ See [the 0.10.0 release notes](./docs/en/Release-0.10.0.md) and
 
 ```bash
 # Clone repository
-git clone --branch v0.10.0 --depth 1 https://github.com/soulteary/owlmail.git
+git clone --branch v0.10.1 --depth 1 https://github.com/soulteary/owlmail.git
 cd owlmail
 
 # Build
@@ -106,7 +94,7 @@ go build -o owlmail ./cmd/owlmail
 #### Install with Go
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.0
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
 owlmail
 ```
 
@@ -154,8 +142,8 @@ loopback form.
 The easiest way to use OwlMail is to pull the pre-built image from GitHub Container Registry:
 
 ```bash
-# Pull release 0.10.0
-docker pull ghcr.io/soulteary/owlmail:0.10.0
+# Pull release 0.10.1
+docker pull ghcr.io/soulteary/owlmail:0.10.1
 
 # Pull an image for one exact commit (example)
 docker pull ghcr.io/soulteary/owlmail:sha-8d3445d
@@ -166,11 +154,11 @@ docker run -d \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
   --name owlmail \
-  ghcr.io/soulteary/owlmail:0.10.0
+  ghcr.io/soulteary/owlmail:0.10.1
 ```
 
 **Available Tags:**
-- `0.10.0` - Exact release tag; `0.10` and `0` move with later releases in those series
+- `0.10.1` - Exact release tag; `0.10` and `0` move with later releases in those series
 - `sha-<commit>` - Image for a specific short commit SHA (for example, `sha-8d3445d`)
 - `main` - Moving image from the latest `main` branch build
 - `latest` - Moving default-branch image; it is not a stable-release selector
@@ -879,7 +867,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Related Documentation
 
-- [OwlMail 0.10.0 Release Notes](./docs/en/Release-0.10.0.md)
+- [OwlMail 0.10.1 Release Notes](./docs/en/Release-0.10.1.md)
 - [Integration Testing](./docs/en/Integration-Testing.md) and [CI Quickstart](./docs/en/CI-Quickstart.md)
 - [AI Agent Testing](./docs/en/AI-Agent-Testing.md) and [MCP Reference](./docs/en/MCP-Reference.md)
 - [Testing Recipes and Runnable Examples](./docs/en/Testing-Recipes.md)

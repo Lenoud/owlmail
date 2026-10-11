@@ -60,19 +60,9 @@ OwlMail은 애플리케이션 이메일이 실제 받은 편지함에 도착하�
   [sendmail 가이드](./docs/ko/Sendmail.md)를 사용할 수 있습니다. 소스 및 브라우저
   테스트는 Bun을 사용하지만 배포 바이너리에는 런타임이 필요하지 않습니다.
 
-## 🆕 OwlMail 0.10.0
+## OwlMail 0.10.1
 
-`v0.10.0`은 현재 안정 버전이자 보안 릴리스입니다. Web UI, REST API, WebSocket
-스트림, 읽기 전용 MCP 엔드포인트가 이제 기본적으로 브라우저 `Origin` 헤더를
-검증합니다. 수집된 메일은 더 이상 모두가 목록을 볼 수 있는 디렉터리에 기록되지
-않으며, 암시적 TLS 리스너 포트는 바인딩하지 못하는 경우가 잦던 특권 포트에
-고정되지 않고 설정 가능해졌습니다. runtime API와 저장 형식은 0.9.0과 호환되지만
-업그레이드 시 보이는 변경이 세 가지 있습니다. 배포 전에 릴리스 노트를 확인하세요.
-
-아래 예제는 `ghcr.io/soulteary/owlmail:0.10.0`으로 고정됩니다.
-재현 가능한 CI에서는 전체 버전 또는
-`ghcr.io/soulteary/owlmail@sha256:<digest>`를 사용하세요.
-[0.10.0 릴리스 노트](./docs/en/Release-0.10.0.md)를 참고하세요.
+`v0.10.1`은 현재 안정 유지보수 릴리스입니다. SMTP 리스너 시작/종료 경합을 수정하고 Go 1.27.2, kit 및 의존성을 업데이트합니다. API, 저장 형식과 0.10.0의 보안 보호는 유지됩니다. [릴리스 노트](./docs/en/Release-0.10.1.md) · [0.10.0 release notes](./docs/en/Release-0.10.0.md).
 
 > [!IMPORTANT]
 > OwlMail은 개발, 테스트, CI 및 신뢰할 수 있는 내부 네트워크용입니다. 공개 운영
@@ -86,7 +76,7 @@ OwlMail은 애플리케이션 이메일이 실제 받은 편지함에 도착하�
 
 ```bash
 # Clone repository
-git clone --branch v0.10.0 --depth 1 https://github.com/soulteary/owlmail.git
+git clone --branch v0.10.1 --depth 1 https://github.com/soulteary/owlmail.git
 cd owlmail
 
 # Build
@@ -99,7 +89,7 @@ go build -o owlmail ./cmd/owlmail
 #### Install with Go
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.0
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
 owlmail
 ```
 
@@ -138,8 +128,8 @@ export MAILDEV_WEB_PORT=1080
 OwlMail을 사용하는 가장 쉬운 방법은 GitHub Container Registry에서 사전 빌드된 이미지를 가져오는 것입니다:
 
 ```bash
-# 0.10.0 릴리스 가져오기
-docker pull ghcr.io/soulteary/owlmail:0.10.0
+# 0.10.1 릴리스 가져오기
+docker pull ghcr.io/soulteary/owlmail:0.10.1
 
 # 정확한 커밋 이미지 가져오기 (예시)
 docker pull ghcr.io/soulteary/owlmail:sha-8d3445d
@@ -150,11 +140,11 @@ docker run -d \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
   --name owlmail \
-  ghcr.io/soulteary/owlmail:0.10.0
+  ghcr.io/soulteary/owlmail:0.10.1
 ```
 
 **사용 가능한 태그:**
-- `0.10.0` - 정확한 릴리스 태그. `0.10`와 `0`은 해당 계열의 후속 릴리스에 따라 이동
+- `0.10.1` - 정확한 릴리스 태그. `0.10`와 `0`은 해당 계열의 후속 릴리스에 따라 이동
 - `sha-<commit>` - 특정 짧은 커밋 SHA의 이미지(예: `sha-8d3445d`)
 - `main` - 최신 `main` 빌드를 가리키는 이동 태그
 - `latest` - 기본 브랜치를 가리키는 이동 태그이며 안정 릴리스 선택자가 아님
@@ -704,7 +694,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Related Documentation
 
-- [OwlMail 0.10.0 릴리스 노트](./docs/en/Release-0.10.0.md) ([中文](./docs/zh-CN/Release-0.10.0.md))
+- [OwlMail 0.10.1 릴리스 노트](./docs/en/Release-0.10.1.md) ([中文](./docs/zh-CN/Release-0.10.1.md))
 - [통합 테스트, CI 및 AI Agent](./docs/en/Integration-Testing.md) ([中文](./docs/zh-CN/Integration-Testing.md))
 - [MCP 참조](./docs/en/MCP-Reference.md), [아키텍처](./docs/en/Architecture.md), [보안 모델](./docs/en/Security-Model.md)
 - [실행 가능한 테스트 예제](./examples/testing/README.md)

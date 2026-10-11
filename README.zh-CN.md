@@ -60,18 +60,9 @@ OwlMail 在应用邮件进入真实邮箱前将其捕获，并转换为确定、
   [sendmail 指南](./docs/zh-CN/Sendmail.md)接入传统程序。源码和浏览器测试使用 Bun；
   部署后的二进制不需要 Go、Bun 或 Node.js 运行时。
 
-## 🆕 OwlMail 0.10.0
+## OwlMail 0.10.1
 
-`v0.10.0` 是当前稳定版本，也是一个安全版本：Web UI、REST API、WebSocket 流与只读
-MCP 端点现在默认校验浏览器 `Origin` 头；已捕获的邮件不再写入全局可列目录；隐式 TLS
-监听端口改为可配置，不再固定在一个常常无法绑定的特权端口上。运行时 API 与存储格式
-保持与 0.9.0 兼容，但有三处变化在升级时可见——部署前请先阅读发布说明。
-
-以下安装示例统一固定为 `ghcr.io/soulteary/owlmail:0.10.0`。需要可重复的 CI
-或接近生产的测试环境时，应使用完整版本号或
-`ghcr.io/soulteary/owlmail@sha256:<digest>`，不要依赖移动标签。
-完整内容参阅 [0.10.0 发布说明](./docs/zh-CN/Release-0.10.0.md)和
-[CHANGELOG.md](./CHANGELOG.md)。
+`v0.10.1` 是当前稳定维护版本，修复普通 SMTP listener 启停竞态，并升级 Go 1.27.2、soulteary kit 和第三方依赖。运行时 API 与存储格式兼容 0.10.0，保留该版本引入的安全保护。详见 [0.10.1 发布说明](./docs/zh-CN/Release-0.10.1.md) · [0.10.0 release notes](./docs/zh-CN/Release-0.10.0.md)。
 
 > [!IMPORTANT]
 > OwlMail 面向开发、测试、CI 与可信内部网络，不是公网生产 MTA、
@@ -85,7 +76,7 @@ MCP 端点现在默认校验浏览器 `Origin` 头；已捕获的邮件不再写
 
 ```bash
 # 克隆仓库
-git clone --branch v0.10.0 --depth 1 https://github.com/soulteary/owlmail.git
+git clone --branch v0.10.1 --depth 1 https://github.com/soulteary/owlmail.git
 cd owlmail
 
 # 编译
@@ -98,7 +89,7 @@ go build -o owlmail ./cmd/owlmail
 #### 使用 Go 安装
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.0
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
 owlmail
 ```
 
@@ -140,8 +131,8 @@ export MAILDEV_WEB_PORT=1080
 使用 OwlMail 最简单的方式是从 GitHub Container Registry 拉取预构建的镜像：
 
 ```bash
-# 拉取 0.10.0 发布镜像
-docker pull ghcr.io/soulteary/owlmail:0.10.0
+# 拉取 0.10.1 发布镜像
+docker pull ghcr.io/soulteary/owlmail:0.10.1
 
 # 拉取某个准确提交的镜像（示例）
 docker pull ghcr.io/soulteary/owlmail:sha-8d3445d
@@ -152,11 +143,11 @@ docker run -d \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
   --name owlmail \
-  ghcr.io/soulteary/owlmail:0.10.0
+  ghcr.io/soulteary/owlmail:0.10.1
 ```
 
 **可用标签：**
-- `0.10.0` - 准确发布标签；`0.10` 与 `0` 会随对应版本系列的后续发布移动
+- `0.10.1` - 准确发布标签；`0.10` 与 `0` 会随对应版本系列的后续发布移动
 - `sha-<commit>` - 指定短提交 SHA 的镜像（例如 `sha-8d3445d`）
 - `main` - 随 `main` 分支最新构建移动的镜像
 - `latest` - 随默认分支移动的镜像，不是稳定版本选择器
@@ -825,7 +816,7 @@ OwlMail/
 
 ## 📚 相关文档
 
-- [OwlMail 0.10.0 发布说明](./docs/zh-CN/Release-0.10.0.md)
+- [OwlMail 0.10.1 发布说明](./docs/zh-CN/Release-0.10.1.md)
 - [集成测试](./docs/zh-CN/Integration-Testing.md)与 [CI 快速入门](./docs/zh-CN/CI-Quickstart.md)
 - [AI Agent 测试](./docs/zh-CN/AI-Agent-Testing.md)与 [MCP 参考](./docs/zh-CN/MCP-Reference.md)
 - [测试配方与可运行示例](./docs/zh-CN/Testing-Recipes.md)

@@ -566,13 +566,17 @@ test(`${currentVersion} release documentation and workflow stay connected`, () =
   const releaseEnd = nextRelease === -1 ? changelog.length : nextRelease;
   assert.ok(releaseStart >= 0 && releaseEnd > releaseStart, `CHANGELOG.md is missing the ${currentVersion} release section`);
   const releaseSection = changelog.slice(releaseStart, releaseEnd);
+  // These protections belong to the historical security release, not every later patch.
+  const securityStart = changelog.indexOf("## [0.10.0]");
+  const securityEnd = changelog.indexOf("\n## [", securityStart + 1);
+  const securitySection = changelog.slice(securityStart, securityEnd);
   for (const marker of [
     "browser `Origin` header",
     "world-listable",
     "`-smtps-port`",
     "Go fuzz targets",
   ]) {
-    assert.ok(releaseSection.includes(marker), `CHANGELOG.md ${currentVersion} section is missing ${marker}`);
+    assert.ok(securitySection.includes(marker), `CHANGELOG.md 0.10.0 security section is missing ${marker}`);
   }
   assert.ok(changelog.includes(`[${currentVersion}]:`), `CHANGELOG.md is missing the ${currentVersion} comparison link`);
   assert.ok(
@@ -582,11 +586,11 @@ test(`${currentVersion} release documentation and workflow stay connected`, () =
 
   const releaseNotes = [
     [
-      `docs/en/${currentReleaseNote}`,
+      "docs/en/Release-0.10.0.md",
       ["Browser origin validation", "Storage permissions", "Configurable SMTPS port", "Known limitations", "owlmail-linux-amd64"],
     ],
     [
-      `docs/zh-CN/${currentReleaseNote}`,
+      "docs/zh-CN/Release-0.10.0.md",
       ["浏览器来源校验", "存储权限", "可配置的 SMTPS 端口", "已知限制", "owlmail-linux-amd64"],
     ],
   ];
@@ -618,15 +622,15 @@ test(`${currentVersion} release documentation and workflow stay connected`, () =
 
   const comparison = fs.readFileSync(path.join(root, "docs/en/Comparison-and-Migration.md"), "utf8");
   const releaseBaseline = comparison.match(
-    new RegExp(`OwlMail: ${currentVersionPattern} release baseline at\\s+([0-9a-f]{40})`),
+    /OwlMail: 0\.10\.0 release baseline at\s+([0-9a-f]{40})/,
   );
-  assert.ok(releaseBaseline, "comparison guide does not identify the current release baseline");
+  assert.ok(releaseBaseline, "comparison guide does not identify the reviewed source baseline");
   const releaseBaselineImage = `sha-${releaseBaseline[1].slice(0, 7)}`;
 
   for (const readme of translatedReadmes) {
     const markdown = fs.readFileSync(path.join(root, readme), "utf8");
     assert.ok(markdown.includes(`ghcr.io/soulteary/owlmail:${currentVersion}`), `${readme} does not pin the release image`);
-    assert.ok(markdown.includes(`ghcr.io/soulteary/owlmail:${releaseBaselineImage}`), `${readme} does not use the current release baseline image`);
+    assert.ok(markdown.includes(`ghcr.io/soulteary/owlmail:${releaseBaselineImage}`), `${readme} does not use the reviewed source baseline image`);
     assert.ok(markdown.includes(currentReleaseNote), `${readme} does not link the release notes`);
     assert.ok(markdown.includes("`/webhooks`"), `${readme} does not document the webhook configurator`);
     assert.ok(markdown.includes("Bun"), `${readme} does not distinguish the Bun build tool from runtime requirements`);
