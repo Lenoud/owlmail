@@ -94,7 +94,13 @@ function createHarness({ permission = 'default', secure = true, savedPreference 
         ['emailList', emailList],
         ['emailViewportFrame', emailViewportFrame],
         ['emailViewportStage', emailViewportStage],
-        ['email-content-tab-source', emailSourceTab]
+        ['email-content-tab-source', emailSourceTab],
+        ['emailInspectionRun', createElement()],
+        ['emailInspectionStatus', createElement()],
+        ['emailDeliveriesRefresh', createElement()],
+        ['emailDeliveriesPanel', createElement()],
+        ['emailRelayActions', createElement()],
+        ['emailDeleteAction', createElement()]
     ]);
     const notifications = [];
     const fetchRequests = [];
@@ -166,7 +172,8 @@ function createHarness({ permission = 'default', secure = true, savedPreference 
         },
         createElement() { return createElement(); }
     };
-	for (const element of elements.values()) {
+	for (const [id, element] of elements) {
+        element.id = id;
 		element.focus = function focus() {
 			this.focused = true;
 			document.activeElement = this;
@@ -208,6 +215,7 @@ function createHarness({ permission = 'default', secure = true, savedPreference 
         URL,
         URLSearchParams,
         Blob,
+        TextEncoder,
         alert(message) { alerts.push(String(message)); },
         confirm(message) { confirmations.push(String(message)); return true; }
     };
@@ -541,7 +549,8 @@ test('delete controls stay disabled while relay delivery is pending', async () =
     const relay = harness.run(`relayCurrentEmail('mail-1')`);
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(harness.deleteAllBtn.disabled, true);
-    assert.match(harness.emailDetail.innerHTML, /btn btn-danger" disabled/);
+    assert.equal(harness.run("document.getElementById('emailDeleteAction').disabled"), true);
+    harness.run("emailContentTab = 'inspect'; document.activeElement = { id: 'verification-input', selectionStart: 3 }; const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };");
     const requestCount = harness.fetchRequests.length;
     await harness.run(`deleteEmail('mail-1')`);
     await harness.run(`deleteAllEmails()`);
@@ -550,6 +559,7 @@ test('delete controls stay disabled while relay delivery is pending', async () =
     resolveStatus(jsonResponse({ data: { id: 'job-1', status: 'succeeded' } }));
     await relay;
     assert.equal(harness.deleteAllBtn.disabled, false);
+    assert.equal(harness.run("document.activeElement.selectionStart"), 3);
 });
 
 test('email detail offers HTML, text, headers, and source tabs', () => {
@@ -1038,4 +1048,278 @@ test('failed history detail load clears the previously rendered selection', asyn
     assert.equal(harness.run('state.currentEmail'), null);
     assert.equal(harness.window.location.search, '?email=mail-missing');
     assert.equal(harness.alerts.length, 1);
+});
+
+test('verification submits exact assertions and safely renders extracted mail content', async () => {
+    const harness = createHarness({ basePathname: '/owlmail', fetchImpl: async () => jsonResponse({ passed: false, checks: [{ name: 'text', passed: false, message: '<script>bad</script>' }], links: [], extractions: { code: ['123456'] }, links_truncated: false, extractions_truncated: false }) });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', headers: {}, attachments: [], run_id: 'run-a' }; emailContentTab = 'inspect'; renderEmailDetail(); updateEmailInspectionField('subject', 'Verify'); updateEmailInspectionField('text', 'Expected'); updateEmailInspectionField('hosts', 'app.example.test, login.example.test'); updateEmailInspectionField('codes', true)`);
+    await harness.run('runEmailInspection()');
+    assert.equal(harness.fetchRequests[0].url, 'http://owlmail.test/owlmail/api/v1/emails/mail-1/check');
+    const body = JSON.parse(harness.fetchRequests[0].options.body);
+    assert.deepEqual(body.allowed_link_hosts, ['app.example.test', 'login.example.test']);
+    assert.deepEqual(body.text_contains, ['Expected']);
+    assert.deepEqual('1234567 123456 912345678'.match(new RegExp(body.extract[0].pattern, 'g')), ['123456']);
+    assert.match(harness.run("document.getElementById('emailInspectionStatus').innerHTML"), /Checks failed/);
+    assert.match(harness.run("document.getElementById('emailInspectionStatus').innerHTML"), /&lt;script&gt;bad/);
+    assert.equal(harness.emailDetail.innerHTML.includes('<script>bad'), false);
+    assert.match(harness.emailDetail.innerHTML, /run-a/);
+});
+
+test('late verification response cannot overwrite another selected message', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'first', text: 'first', attachments: [] }; emailContentTab = 'inspect'`);
+    const pending = harness.run('runEmailInspection()');
+    harness.run(`state.currentEmail = { id: 'second', text: 'second', attachments: [] }; renderEmailDetail()`);
+    finish(jsonResponse({ passed: true, checks: [], links: [], extractions: {} }));
+    await pending;
+    assert.equal(harness.run('emailTools.id'), 'second');
+    assert.equal(harness.run('emailTools.report'), null);
+    assert.equal(harness.emailDetail.innerHTML.includes('Checks passed'), false);
+});
+
+test('delivery panels keep partial errors visible and require explicit retry confirmation', async () => {
+    const harness = createHarness({ fetchImpl: async (url, options) => {
+        if (options?.method === 'POST') return jsonResponse({ data: { job: { id: 'new-job', status: 'queued' }, statusUrl: '/api/v1/relay-jobs/new-job' } });
+        if (String(url).endsWith('/relay-jobs/new-job')) return jsonResponse({ data: { id: 'new-job', status: 'succeeded' } });
+        if (String(url).includes('/relay-jobs')) return jsonResponse({ jobs: [{ id: 'job-1', status: 'failed', attempts: 3, errorCategory: 'temporary' }], persistence_healthy: false });
+        return { ok: false, async text() { return 'Webhook history unavailable'; } };
+    } });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries'`);
+    await harness.run('refreshEmailDeliveries()');
+    assert.match(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML"), /could not be persisted/);
+    assert.match(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML"), /Webhook history unavailable/);
+    assert.match(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML"), /job-1/);
+    await harness.run(`retryEmailWorkflow('relay', 0)`);
+    assert.equal(harness.confirmations.length, 1);
+    assert.equal(harness.fetchRequests[2].url, 'http://owlmail.test/api/v1/relay-jobs/job-1/retry');
+    assert.equal(harness.run('emailTools.notice'), '');
+    await harness.run(`retryEmailWorkflow('relay', 0)`);
+    assert.equal(harness.fetchRequests.length, 4);
+    await harness.run('refreshEmailDeliveries()');
+    assert.equal(harness.run('emailTools.notice'), '');
+    assert.equal(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML").includes('Retry accepted'), false);
+});
+
+
+test('edited verification criteria clear completed results and supersede pending responses', async () => {
+    let finish;
+    const harness = createHarness({ fetchImpl: async () => new Promise(resolve => { finish = resolve; }) });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'inspect'; emailToolsFor(state.currentEmail).report = { passed: true, checks: [], links: [], extractions: {} }; updateEmailInspectionField('subject', 'new criteria')`);
+    assert.equal(harness.run('emailTools.report'), null);
+    const pending = harness.run('runEmailInspection()');
+    harness.run(`updateEmailInspectionField('subject', 'even newer criteria')`);
+    finish(jsonResponse({ passed: true, checks: [], links: [], extractions: {} }));
+    await pending;
+    assert.equal(harness.run('emailTools.report'), null);
+    assert.equal(harness.emailDetail.innerHTML.includes('Checks passed'), false);
+    assert.equal(harness.run('emailTools.checking'), false);
+});
+
+
+test('delivery loading preserves tab focus and completion does not steal moved focus', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries';
+        const deliveryTab = { focus() { document.activeElement = this; } };
+        const lookup = document.getElementById;
+        document.getElementById = id => id === 'email-content-tab-deliveries' ? deliveryTab : lookup(id);
+        const originalRender = renderEmailDetail;
+        renderEmailDetail = () => { originalRender(); document.activeElement = null; };
+        document.activeElement = deliveryTab;`);
+    const pending = harness.run('refreshEmailDeliveries()');
+    assert.equal(harness.run('document.activeElement === deliveryTab'), true);
+    harness.run(`document.activeElement = { id: 'another-control' }`);
+    finish(jsonResponse({ jobs: [], deliveries: [] }));
+    await pending;
+    assert.equal(harness.run('document.activeElement === deliveryTab'), false);
+});
+
+test('queue-only webhook failures do not offer or submit manual retries', async () => {
+    const harness = createHarness();
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries'; emailToolsFor(state.currentEmail).webhook = { deliveries: [{ id: 'queue-failure', status: 'failed', outcomes: [{ target: 'delivered', error_category: '' }, { target: '', error_category: 'queue' }] }] }; renderEmailDetail()`);
+    assert.equal(harness.emailDetail.innerHTML.includes("retryEmailWorkflow('webhook'"), false);
+    await harness.run("retryEmailWorkflow('webhook', 0)");
+    assert.equal(harness.confirmations.length, 0);
+    assert.equal(harness.fetchRequests.length, 0);
+    harness.run(`emailTools.webhook.deliveries[0].outcomes.push({ target: 'failed-target', error_category: 'http_status' }); renderEmailDetail()`);
+    assert.equal(harness.emailDetail.innerHTML.includes("retryEmailWorkflow('webhook'"), true);
+});
+
+
+test('superseded checks and inactive delivery completions preserve panel controls', async () => {
+    let finish;
+    const harness = createHarness({ fetchImpl: async () => new Promise(resolve => { finish = resolve; }) });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'inspect'`);
+    const check = harness.run('runEmailInspection()');
+    harness.run(`updateEmailInspectionField('text', 'new criteria'); document.activeElement = { id: 'verification-input' }; const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    finish(jsonResponse({ passed: true, checks: [], links: [], extractions: {} }));
+    await check;
+    assert.equal(harness.run('document.activeElement.id'), 'verification-input');
+});
+
+
+test('delivery completion does not rerender an inactive Verify panel', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries'`);
+    const refresh = harness.run('refreshEmailDeliveries()');
+    harness.run(`emailContentTab = 'inspect'; document.activeElement = { id: 'verification-input' }; const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    finish(jsonResponse({ deliveries: [], jobs: [] }));
+    await refresh;
+    assert.equal(harness.run('document.activeElement.id'), 'verification-input');
+    assert.equal(harness.run('emailTools.loaded'), true);
+});
+
+
+test('verification updates status in place and retains the keyboard run button', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'inspect'; document.getElementById('emailInspectionRun').focus(); const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    const pending = harness.run('runEmailInspection()');
+    assert.equal(harness.run("document.activeElement === document.getElementById('emailInspectionRun')"), true);
+    finish(jsonResponse({ passed: true, checks: [], links: [], extractions: {} }));
+    await pending;
+    assert.equal(harness.run("document.activeElement === document.getElementById('emailInspectionRun')"), true);
+    assert.match(harness.run("document.getElementById('emailInspectionStatus').innerHTML"), /Checks passed/);
+});
+
+test('retry completion retains an inactive panel and its focused input', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries'; emailToolsFor(state.currentEmail).webhook = { deliveries: [{ id: 'job-1', status: 'failed', outcomes: [{ target: 'target', error_category: 'transport' }] }] };`);
+    const pending = harness.run("retryEmailWorkflow('webhook', 0)");
+    harness.run(`emailContentTab = 'inspect'; document.activeElement = { id: 'verification-input' }; const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    finish(jsonResponse({ success: true }));
+    await pending;
+    assert.equal(harness.run('document.activeElement.id'), 'verification-input');
+    assert.equal(harness.run('emailTools.webhook.deliveries[0].status'), 'queued');
+});
+
+
+test('delivery refresh preserves its keyboard action across loading and completion', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'deliveries'; document.getElementById('emailDeliveriesRefresh').focus(); const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    const pending = harness.run('refreshEmailDeliveries()');
+    assert.equal(harness.run("document.activeElement.id"), 'emailDeliveriesRefresh');
+    finish(jsonResponse({ deliveries: [], jobs: [] }));
+    await pending;
+    assert.equal(harness.run("document.activeElement.id"), 'emailDeliveriesRefresh');
+});
+
+
+test('HTML-only mail clearly limits plain-text controls and retains subject/link checks', async () => {
+    const harness = createHarness({ fetchImpl: async () => jsonResponse({ passed: true, checks: [], links: [], extractions: {} }) });
+    harness.run(`state.currentEmail = { id: 'html-only', text: '', html: '<p>Code 123456</p>', attachments: [] }; emailContentTab = 'inspect'; updateEmailInspectionField('subject', 'Verify'); updateEmailInspectionField('text', 'Code'); updateEmailInspectionField('codes', true); renderEmailDetail()`);
+    assert.match(harness.emailDetail.innerHTML, /no plain-text part/);
+    assert.match(harness.emailDetail.innerHTML, /input disabled maxlength/);
+    assert.match(harness.emailDetail.innerHTML, /type="checkbox" disabled/);
+    await harness.run('runEmailInspection()');
+    const request = JSON.parse(harness.fetchRequests[0].options.body);
+    assert.deepEqual(request.text_contains, []);
+    assert.equal(request.extract, undefined);
+    assert.deepEqual(request.subject_contains, ['Verify']);
+});
+
+
+test('verification enforces UTF-8 byte limits before submitting non-ASCII assertions', async () => {
+    const harness = createHarness({ fetchImpl: async () => jsonResponse({ passed: true, checks: [], links: [], extractions: {} }) });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello', attachments: [] }; emailContentTab = 'inspect'; updateEmailInspectionField('subject', '汉'.repeat(512));`);
+    await harness.run('runEmailInspection()');
+    assert.equal(harness.fetchRequests.length, 0);
+    assert.match(harness.run("document.getElementById('emailInspectionStatus').innerHTML"), /1024 UTF-8 bytes/);
+    harness.run(`updateEmailInspectionField('subject', ''); updateEmailInspectionField('text', '汉'.repeat(512));`);
+    await harness.run('runEmailInspection()');
+    assert.equal(harness.fetchRequests.length, 0);
+    harness.run(`updateEmailInspectionField('text', '汉'.repeat(341) + 'x');`);
+    await harness.run('runEmailInspection()');
+    assert.equal(harness.fetchRequests.length, 1);
+});
+
+
+test('relay availability completion preserves Verify input and composition state', async () => {
+    const harness = createHarness();
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello' }; emailContentTab = 'inspect'; API.getOutgoingConfig = () => new Promise(resolve => { globalThis.finishAvailability = resolve; }); const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; }; document.activeElement = { id: 'verification-input', selectionStart: 3 };`);
+    const pending = harness.run('loadRelayAvailability()');
+    harness.run('finishAvailability({ enabled: true })');
+    await pending;
+    assert.equal(harness.run('document.activeElement.selectionStart'), 3);
+    assert.match(harness.run("document.getElementById('emailRelayActions').innerHTML"), /relayCurrentEmail/);
+});
+
+test('delivery refresh completion preserves a focused header action', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello' }; emailContentTab = 'deliveries'; const original = renderEmailDetail; renderEmailDetail = () => { original(); document.activeElement = null; };`);
+    const pending = harness.run('refreshEmailDeliveries()');
+    harness.run("document.activeElement = { id: 'download-action' }");
+    finish(jsonResponse({ jobs: [], deliveries: [] }));
+    await pending;
+    assert.equal(harness.run('document.activeElement.id'), 'download-action');
+    assert.match(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML"), /emailDeliveriesRefresh/);
+});
+
+
+test('relay retry tracks the new job and blocks mutation until completion', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async (url, options) => options?.method === 'POST' ? jsonResponse({ data: { job: { id: 'new-job', status: 'queued' }, statusUrl: '/api/v1/relay-jobs/new-job' } }) : waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello' }; emailContentTab = 'deliveries'; emailToolsFor(state.currentEmail).relay = { jobs: [{ id: 'old-job', status: 'failed' }] };`);
+    const pending = harness.run("retryEmailWorkflow('relay', 0)");
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(harness.deleteAllBtn.disabled, true);
+    assert.equal(harness.run("document.getElementById('emailDeleteAction').disabled"), true);
+    assert.equal(harness.run('emailTools.relay.jobs[0].id'), 'new-job');
+    assert.equal(harness.run('emailTools.relay.jobs[1].status'), 'failed');
+    finish(jsonResponse({ data: { id: 'new-job', status: 'succeeded' } }));
+    await pending;
+    assert.equal(harness.deleteAllBtn.disabled, false);
+    assert.equal(harness.run('emailTools.relay.jobs[0].status'), 'succeeded');
+    assert.equal(harness.run('emailTools.notice'), '');
+});
+
+
+test('relay retry admission blocks mutation before POST resolves and releases on rejection', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello' }; emailContentTab = 'deliveries'; emailToolsFor(state.currentEmail).relay = { jobs: [{ id: 'old-job', status: 'failed' }] };`);
+    const pending = harness.run("retryEmailWorkflow('relay', 0)");
+    assert.equal(harness.deleteAllBtn.disabled, true);
+    assert.equal(harness.run("document.getElementById('emailDeleteAction').disabled"), true);
+    await harness.run("deleteEmail('mail-1'); deleteAllEmails(); relayCurrentEmail('mail-1'); retryEmailWorkflow('relay', 0)");
+    assert.equal(harness.fetchRequests.length, 1);
+    finish({ ok: false, status: 503, async text() { return 'Unavailable'; } });
+    await pending;
+    assert.equal(harness.deleteAllBtn.disabled, false);
+    assert.equal(harness.run('relayPending.size'), 0);
+    assert.equal(harness.run('emailTools.relay.jobs[0].status'), 'failed');
+});
+
+
+test('delivery retry focus follows job identity when refresh reorders records', async () => {
+    let finish;
+    const waiting = new Promise(resolve => { finish = resolve; });
+    const harness = createHarness({ fetchImpl: async () => waiting });
+    harness.run(`state.currentEmail = { id: 'mail-1', text: 'hello' }; emailContentTab = 'deliveries'; emailToolsFor(state.currentEmail).relay = { jobs: [{ id: 'first', status: 'failed' }, { id: 'selected', status: 'failed' }] };
+        const lookup = document.getElementById;
+        document.getElementById = id => {
+            if (!id.startsWith('email-workflow-retry-relay-')) return lookup(id);
+            const job = emailTools.relay.jobs.find(job => emailWorkflowActionID('relay', job.id) === id);
+            return job ? { id, jobID: job.id, focus() { document.activeElement = this; } } : null;
+        };`);
+    const pending = harness.run('refreshEmailDeliveries()');
+    harness.run("document.getElementById(emailWorkflowActionID('relay', 'selected')).focus()");
+    finish(jsonResponse({ jobs: [{ id: 'selected', status: 'failed' }, { id: 'replacement', status: 'failed' }], deliveries: [] }));
+    await pending;
+    assert.equal(harness.run('document.activeElement.jobID'), 'selected');
+    assert.match(harness.run("document.getElementById('emailDeliveriesPanel').outerHTML"), /id="email-workflow-retry-relay-selected"/);
 });
