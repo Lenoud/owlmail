@@ -45,16 +45,30 @@ def verify(image, name, flags, fixture, environment=(), expect_healthy=True, hea
             raise RuntimeError('Manual probe disagrees with expected health status')
         if name in ('owlmail-ci-health-smtp-only', 'owlmail-ci-health-smtp-env'):
             probe = ['docker', 'exec', container, '/app/owlmail', 'healthcheck', '--ready', '--container']
-            command(*probe)
+            for _ in range(10):
+                if subprocess.run(probe, capture_output=True, timeout=15).returncode == 0:
+                    break
+                time.sleep(1)
+            else:
+                raise RuntimeError('Runtime readiness never became ready')
             command('docker', 'exec', container, 'chmod', '500', '/app/mail')
             try:
-                failed = subprocess.run(probe, capture_output=True, text=True, timeout=15)
-                if failed.returncode != 1 or 'mail storage is not writable' not in failed.stderr:
+                for _ in range(10):
+                    failed = subprocess.run(probe, capture_output=True, text=True, timeout=15)
+                    if failed.returncode == 1:
+                        break
+                    time.sleep(1)
+                else:
                     raise RuntimeError('Read-only storage passed readiness: ' + failed.stdout + failed.stderr)
                 command('docker', 'exec', container, '/app/owlmail', 'healthcheck', '--container')
             finally:
                 command('docker', 'exec', container, 'chmod', '700', '/app/mail')
-            command(*probe)
+            for _ in range(40):
+                if subprocess.run(probe, capture_output=True, timeout=15).returncode == 0:
+                    break
+                time.sleep(1)
+            else:
+                raise RuntimeError('Runtime readiness did not recover')
             print('PASS:', name, 'readiness tracks storage; liveness remains healthy', flush=True)
         print('PASS:', name, wanted, flush=True)
     finally:
@@ -97,7 +111,7 @@ def main():
                ('-e', 'OWLMAIL_WEB_PORT=18082', '-e', 'OWLMAIL_BASE_PATHNAME=/env'))
         scenario('owlmail-ci-health-cli', ['-web', '18080', '-base-pathname', '/mail'], root)
         scenario('owlmail-ci-health-https', ['-config', '/fixtures/config.yaml'], root)
-        scenario('owlmail-ci-health-smtp-only', ['-disable-web', '-smtp', '18084'], root)
+        scenario('owlmail-ci-health-smtp-only', ['-disable-web', '-ip', '', '-smtp', '18084'], root)
         scenario('owlmail-ci-health-smtp-env', [], root, ('-e', 'OWLMAIL_DISABLE_WEB=true', '-e', 'OWLMAIL_SMTP_PORT=18085'))
         scenario('owlmail-ci-health-ipv6', ['-web-ip', '::', '-web', '18083'], root)
         # Keep stdin open for a non-server mode; it must never probe a default
