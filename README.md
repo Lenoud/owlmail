@@ -906,6 +906,17 @@ wrapper. Offline commands such as `doctor`, `sendmail`, and `mcp-stdio` do not
 provide the web listener and fail the container check instead of probing an
 unrelated default port. Reverse-proxy external URLs do not change the local probe.
 
+### Commands and keyboard help
+
+Open **Commands and shortcuts** in the header, press `?`, or use `Ctrl+K` /
+`Cmd+K` outside a text field. Search localized command names, use Up/Down to
+choose an available command, and press Enter to run it. Tab stays within the
+modal; Escape or Close returns focus to its opener. Existing mailbox shortcuts
+are shown beside their commands and are suspended while the modal is open.
+Commands that need a selected message or HTML preview are disabled when those
+are absent. Deletion retains the normal confirmation and relay protection.
+
+
 ### Mail preview controls
 
 The interface follows the system color scheme until a theme is chosen with the
