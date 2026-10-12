@@ -35,6 +35,7 @@ type RuntimeReadiness struct {
 	Storage    attachmentstore.HealthStatus  `json:"mail_storage"`
 	Attachment *attachmentstore.HealthStatus `json:"attachment_store,omitempty"`
 	Relay      *outgoing.RuntimeReadiness    `json:"relay,omitempty"`
+	RelayJobs  *attachmentstore.HealthStatus `json:"relay_job_storage,omitempty"`
 	Transport  *attachmentstore.HealthStatus `json:"outgoing_transport,omitempty"`
 }
 
@@ -67,6 +68,9 @@ func (status RuntimeReadiness) ValidateService(now time.Time) error {
 	if status.Relay != nil && !status.Relay.Ready() {
 		return fmt.Errorf("runtime relay workers or queue are not ready")
 	}
+	if status.RelayJobs != nil && (!status.RelayJobs.Ready() || !readinessFresh(*status.RelayJobs, now)) {
+		return fmt.Errorf("runtime durable relay storage is not ready")
+	}
 	if (status.Relay != nil && status.Relay.Enabled && status.Transport == nil) || (status.Transport != nil && (!status.Transport.Ready() || !readinessFresh(*status.Transport, now))) {
 		return fmt.Errorf("runtime outgoing SMTP transport or authentication is not ready")
 	}
@@ -97,6 +101,9 @@ func (ms *MailServer) GetRuntimeReadiness() RuntimeReadiness {
 	result := RuntimeReadiness{Version: 1, PID: os.Getpid(), Host: ms.host, Port: ms.port, UpdatedAt: now, SMTP: smtp, Storage: freshReadinessStatus(storage, now)}
 	if attachment, enabled := ms.GetAttachmentHealth(); enabled {
 		result.Attachment = &attachment
+	}
+	if relayJobs, enabled := ms.GetRelayJobHealth(); enabled {
+		result.RelayJobs = &relayJobs
 	}
 	ms.outgoingMutex.RLock()
 	relay := ms.outgoing

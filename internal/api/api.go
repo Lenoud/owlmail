@@ -54,6 +54,7 @@ type API struct {
 	webhookService          *webhook.Service
 	relayJobs               *relayJobStore
 	relayJobsPersistenceErr error
+	relayJobReadiness       *relayJobReadinessMonitor
 	relayRecoveryOnce       sync.Once
 	relaySourceMutex        sync.Mutex
 	relaySourceReleases     map[string]func()
@@ -117,6 +118,9 @@ func NewAPIWithHTTPSDeferredRecovery(mailServer *mailserver.MailServer, port int
 		relaySourceReleases:     make(map[string]func()),
 	}
 	api.wsUpgrader.CheckOrigin = api.webSocketOriginAllowed
+	api.relayJobReadiness = newRelayJobReadinessMonitor(api)
+	mailServer.SetRelayJobReadinessProvider(api.relayJobReadiness)
+	_ = mailServer.AddCloser(api.relayJobReadiness)
 	api.setupRoutes()
 	api.setupEventListeners()
 	if api.relayJobs.hasQueued() {
@@ -128,6 +132,7 @@ func NewAPIWithHTTPSDeferredRecovery(mailServer *mailserver.MailServer, port int
 // StartRelayRecovery starts queued durable work at most once.
 func (api *API) StartRelayRecovery() {
 	api.relayRecoveryOnce.Do(func() {
+		api.relayJobReadiness.Start()
 		if api.relayJobs.hasQueued() {
 			go api.recoverRelayJobs()
 		}
@@ -540,6 +545,7 @@ func (api *API) readiness(c fiber.Ctx) error {
 			"attachment_store":   {Status: "disabled"},
 			"relay":              {Status: "disabled"},
 			"outgoing_transport": {Status: "disabled"},
+			"relay_job_storage":  {Status: "disabled"},
 		},
 	}
 	response.Checks["smtp"] = readinessCheck{Status: "ready"}
@@ -549,6 +555,9 @@ func (api *API) readiness(c fiber.Ctx) error {
 	response.Checks["mail_storage"] = readinessHealthCheck(status.Storage)
 	if status.Attachment != nil {
 		response.Checks["attachment_store"] = readinessHealthCheck(*status.Attachment)
+	}
+	if status.RelayJobs != nil {
+		response.Checks["relay_job_storage"] = readinessHealthCheck(*status.RelayJobs)
 	}
 	if status.Relay != nil && status.Relay.Enabled {
 		response.Checks["relay"] = readinessCheck{Status: "ready"}
