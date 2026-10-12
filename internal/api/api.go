@@ -6,6 +6,7 @@ import (
 	"html"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -419,7 +420,17 @@ func (api *API) Start() error {
 // StartWithReady binds the API listener, then calls ready immediately before
 // serving. A bind or TLS configuration failure is returned without calling it.
 func (api *API) StartWithReady(ready func()) error {
-	addr := fmt.Sprintf("%s:%d", api.host, api.port)
+	host := api.host
+	if strings.ContainsAny(host, "[]") {
+		if !strings.HasPrefix(host, "[") || !strings.HasSuffix(host, "]") {
+			return fmt.Errorf("invalid bracketed web host %q", host)
+		}
+		host = host[1 : len(host)-1]
+		if address, err := netip.ParseAddr(host); err != nil || !address.Is6() {
+			return fmt.Errorf("invalid IPv6 web host %q", api.host)
+		}
+	}
+	addr := net.JoinHostPort(host, fmt.Sprint(api.port))
 
 	var listener net.Listener
 	var err error
