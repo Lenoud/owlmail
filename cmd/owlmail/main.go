@@ -638,7 +638,15 @@ func startAPIServer(server *mailserver.MailServer, cfg *config.Config) (*api.API
 		}
 	}
 
-	if err := apiServer.StartWithReady(apiServer.StartRelayRecovery); err != nil {
+	if err := apiServer.StartWithCertificateReady(func(certificates [][]byte) error {
+		if os.Getpid() == 1 {
+			if err := publishContainerProbeConfig(cfg, server.GetMailDir(), containerProbeConfigPath, "/proc/1/stat", certificates...); err != nil {
+				return fmt.Errorf("publish container probe configuration: %w", err)
+			}
+		}
+		apiServer.StartRelayRecovery()
+		return nil
+	}); err != nil {
 		return nil, fmt.Errorf("failed to start API server: %w", err)
 	}
 
@@ -1235,6 +1243,13 @@ func main() {
 	}
 
 	// Start servers
+	if os.Getpid() == 1 && cfg.DisableWeb {
+		if err := publishContainerProbeConfig(cfg, server.GetMailDir(), containerProbeConfigPath, "/proc/1/stat"); err != nil {
+			_ = server.Close()
+			_, _ = fmt.Fprintf(os.Stderr, "Failed to publish container probe configuration: %v\n", err)
+			os.Exit(1)
+		}
+	}
 	if err := startServers(server, cfg); err != nil {
 		if fatalErr := common.Fatal("Failed to start servers: %v", err); fatalErr != nil {
 			// In test environments, this will return an error instead of exiting
