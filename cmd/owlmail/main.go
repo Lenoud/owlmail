@@ -1143,6 +1143,14 @@ func reportMCPStdioResult(err error, stderr io.Writer) int {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		if err := runHealthcheck(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if len(os.Args) > 1 && os.Args[1] == "doctor" {
 		if err := runDoctor(os.Args[2:], os.Stdout, os.Stderr); err != nil {
 			if errors.Is(err, flag.ErrHelp) {

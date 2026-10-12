@@ -890,6 +890,22 @@ If this project helps you, please give it a Star ⭐!
 
 **OwlMail** — one self-hosted email test gateway for developers, CI, automation, and AI agents. 🦉
 
+### Container health checks
+
+The image runs `owlmail healthcheck --container`. It reads the OwlMail PID 1
+startup flags and resolves the same environment/config-file settings as startup,
+then probes the effective web host, port, base pathname and HTTP/HTTPS scheme.
+Wildcard bind addresses use loopback. HTTPS verifies the configured certificate
+(including self-signed certificates); redirects and non-200 responses fail. The
+request has a two-second timeout and does not need web authentication.
+
+For native deployments, run `owlmail healthcheck` with the same configuration
+flags/environment as the server. Container mode requires the server as PID 1:
+use an `exec` entrypoint, or override the Docker health command for an init
+wrapper. Offline commands such as `doctor`, `sendmail`, and `mcp-stdio` do not
+provide the web listener and fail the container check instead of probing an
+unrelated default port. Reverse-proxy external URLs do not change the local probe.
+
 ### Mail preview controls
 
 The interface follows the system color scheme until a theme is chosen with the

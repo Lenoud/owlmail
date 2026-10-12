@@ -600,10 +600,18 @@ Example web HTTPS:
   -https-key ./certs/web-key.pem
 ```
 
-The image's built-in healthcheck uses plain HTTP on port 1080. If HTTPS is
-enabled, replace the container healthcheck with one that uses HTTPS and the
-appropriate CA policy; otherwise Docker can report an unhealthy container even
-when OwlMail is serving correctly.
+The image's built-in check runs `owlmail healthcheck --container`. It reads the
+OwlMail server's PID 1 arguments and resolves the effective environment and
+configuration file, adapting to the web bind address, port, base pathname and
+HTTP/HTTPS setting. HTTPS verifies the configured certificate, including
+self-signed certificates; enabling HTTPS does not require overriding the check.
+
+Use an `exec` entrypoint so OwlMail is PID 1. For an init wrapper, override the
+check with `owlmail healthcheck` and the same configuration flags/environment as
+the server. Native deployments use that command as well. Non-server commands
+such as `doctor`, `sendmail`, or `mcp-stdio` do not pass the container check.
+The probe has a two-second request timeout and rejects redirects and non-200
+responses. External reverse-proxy URLs do not change the local probe.
 
 Publish the SMTPS port explicitly when direct SMTPS is needed:
 
@@ -804,7 +812,7 @@ tags are intentionally moving.
 | Browser repeatedly asks for credentials | Confirm the effective username/password; a generated password changes on restart; clear stale browser credentials if needed |
 | SMTP returns `530 Authentication required` | Authenticate with the configured username/password, or remove both values to intentionally use NO AUTH mode |
 | OwlMail fails after setting one SMTP credential | Configure both `-smtp-user` and `-smtp-password`, or remove both; partial credentials never fall back to NO AUTH |
-| Container is unhealthy with HTTPS | Override the image's HTTP healthcheck with an HTTPS probe and correct certificate trust |
+| Container is unhealthy with HTTPS | Inspect healthcheck output, effective startup configuration, certificate validity/read permissions and the PID 1/exec-entrypoint requirement |
 | Browser notification does not appear | Enable it from the inbox, use HTTPS or localhost, and restore site permission in browser settings |
 | Webhook delivery is slow | Check receiver latency, timeout and retry settings; lower retries or fix the receiver before raising concurrency |
 | SMTP works but direct SMTPS does not | Publish the `-smtps-port` port, check certificate paths and runtime permission to bind a privileged port |
@@ -817,6 +825,7 @@ Useful checks:
 
 ```bash
 docker logs --tail 200 owlmail
+docker exec owlmail /app/owlmail healthcheck --container
 curl --fail http://localhost:1080/healthz
 curl -u admin:secret http://localhost:1080/api/v1/version
 ```

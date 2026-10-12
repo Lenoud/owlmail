@@ -509,8 +509,15 @@ Web HTTPS 示例：
   -https-key ./certs/web-key.pem
 ```
 
-镜像内置 healthcheck 使用 1080 端口的明文 HTTP。启用 HTTPS 后，应覆盖为 HTTPS
-探针并配置正确的 CA 策略；否则即使 OwlMail 正常服务，Docker 仍可能显示 unhealthy。
+镜像内置检查执行 `owlmail healthcheck --container`，读取作为 PID 1 运行的
+OwlMail 服务启动参数，并解析实际环境变量和配置文件，自动适配 Web 绑定地址、端口、
+基础路径和 HTTP/HTTPS 设置。HTTPS 会验证配置的证书，也支持自签名证书；启用 HTTPS
+无需覆盖健康检查。
+
+使用 `exec` 入口确保 OwlMail 是 PID 1。如果使用 init 包装器，则覆盖为
+`owlmail healthcheck`，并传入与服务相同的配置参数和环境变量；原生部署也使用该命令。
+`doctor`、`sendmail`、`mcp-stdio` 等非服务命令不会通过容器检查。
+探测请求超时为两秒，重定向和非 200 响应均判为失败。反向代理的外部 URL 不影响本地探测。
 
 需要直接 SMTPS 时显式发布 SMTPS 端口：
 
@@ -679,7 +686,7 @@ MailDev 兼容路由都不会再创建与邮件大小相当的额外字节切片
 | Web UI 无法访问 | 核对 `-web-ip`/`OWLMAIL_WEB_HOST`、端口发布和 `/healthz`；查看绑定或证书错误 |
 | 浏览器反复要求凭据 | 核对实际用户名/密码；自动密码重启后会变化；必要时清除浏览器缓存凭据 |
 | 设置 SMTP 凭据后入口仍然开放 | 当前入站 SMTP 鉴权未强制执行；使用接口绑定与网络控制隔离监听器 |
-| HTTPS 容器显示 unhealthy | 用 HTTPS 探针和正确证书信任覆盖镜像的 HTTP healthcheck |
+| HTTPS 容器显示 unhealthy | 检查探测输出、实际启动配置、证书有效性及读取权限，以及 PID 1/exec 入口要求 |
 | 浏览器没有通知 | 在收件箱中开启，使用 HTTPS 或 localhost，并在浏览器网站设置中恢复权限 |
 | Webhook 投递慢 | 检查接收器延迟、超时和重试；提高并发前先修复接收器或减少重试 |
 | SMTP 正常但直接 SMTPS 失败 | 发布 `-smtps-port` 指定的端口，核对证书路径及运行时绑定特权端口的权限 |
@@ -692,6 +699,7 @@ MailDev 兼容路由都不会再创建与邮件大小相当的额外字节切片
 
 ```bash
 docker logs --tail 200 owlmail
+docker exec owlmail /app/owlmail healthcheck --container
 curl --fail http://localhost:1080/healthz
 curl -u admin:secret http://localhost:1080/api/v1/version
 ```

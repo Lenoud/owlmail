@@ -34,14 +34,18 @@ type doctorReport struct {
 }
 
 func doctorConfig(args []string) (*config.Config, error) {
-	scan := flag.NewFlagSet("doctor", flag.ContinueOnError)
+	return commandConfig("doctor", args)
+}
+
+func commandConfig(command string, args []string) (*config.Config, error) {
+	scan := flag.NewFlagSet(command, flag.ContinueOnError)
 	scan.SetOutput(io.Discard)
 	refs := config.DefineFlags(scan)
 	if config.HelpRequested(args, scan) {
 		return nil, flag.ErrHelp
 	}
 	if err := scan.Parse(args); err != nil || scan.NArg() != 0 {
-		return nil, fmt.Errorf("invalid doctor options")
+		return nil, fmt.Errorf("invalid %s options", command)
 	}
 	defaults := config.DefaultConfig()
 	path := strings.TrimSpace(config.ResolveConfig(scan, refs).ConfigFile)
@@ -52,11 +56,11 @@ func doctorConfig(args []string) (*config.Config, error) {
 			return nil, fmt.Errorf("configuration file could not be loaded; check its path and schema")
 		}
 	}
-	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
+	fs := flag.NewFlagSet(command, flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	refs = config.DefineFlagsWithDefaults(fs, defaults)
 	if err := fs.Parse(args); err != nil {
-		return nil, fmt.Errorf("invalid doctor options")
+		return nil, fmt.Errorf("invalid %s options", command)
 	}
 	cfg := config.ResolveConfig(fs, refs)
 	cfg.SMTPSPortConfigured = cfg.SMTPSPortConfigured || defaults.SMTPSPortConfigured
