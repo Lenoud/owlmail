@@ -518,6 +518,13 @@ func startAPIServer(server *mailserver.MailServer, cfg *config.Config) (*api.API
 	if err := server.ConfigureStoragePolicy(storagePolicy); err != nil {
 		return nil, fmt.Errorf("configure storage policy: %w", err)
 	}
+	if cfg.DisableWeb {
+		// The delivery pipeline owns durable relay jobs and source leases.
+		// Keep it active in SMTP-only mode without binding an HTTP listener.
+		apiServer.StartRelayRecovery()
+		common.Log("SMTP-only mode: Web, REST, WebSocket and HTTP MCP listener disabled")
+		return apiServer, nil
+	}
 	apiServer.SetMailDevRESTCompat(cfg.MailDevRESTCompat)
 	apiServer.SetMailCatcherRESTCompat(cfg.MailCatcherRESTCompat)
 	apiServer.SetMetricsEnabled(cfg.MetricsEnabled)
@@ -745,6 +752,9 @@ func initializeApplication(cfg *config.Config) error {
 	if cfg == nil {
 		return fmt.Errorf("config is nil")
 	}
+	if err := config.ValidateWebMode(cfg); err != nil {
+		return err
+	}
 	if cfg.LogFormat == "" {
 		cfg.LogFormat = "console"
 	}
@@ -758,6 +768,9 @@ func initializeApplication(cfg *config.Config) error {
 		return err
 	}
 	cfg.BasePathname = basePathname
+	if cfg.DisableWeb {
+		return nil
+	}
 	completion, err := completeWebAuthConfig(cfg, rand.Reader)
 	if err != nil {
 		return err
