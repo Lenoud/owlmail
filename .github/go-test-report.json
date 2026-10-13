@@ -7,9 +7,9 @@
     "skipped": 3
   },
   "coverage": {
-    "covered_statements": 8473,
+    "covered_statements": 8470,
     "total_statements": 10513,
-    "percentage": 80.6,
+    "percentage": 80.57,
     "threshold": 0
   },
   "packages": [
@@ -46,7 +46,7 @@
       "status": "pass",
       "tests": 274,
       "failed": 0,
-      "coverage": 85.65
+      "coverage": 85.61
     },
     {
       "name": "internal/attachmentstore",
@@ -95,7 +95,7 @@
       "status": "pass",
       "tests": 16,
       "failed": 0,
-      "coverage": 84.87
+      "coverage": 84.48
     },
     {
       "name": "internal/outgoing",
