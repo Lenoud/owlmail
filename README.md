@@ -24,17 +24,17 @@ OwlMail runs as a single Go executable with an embedded Web UI. Docker images su
 
 ## Why OwlMail
 
-- **Inspect mail and check expectations.** View HTML, text, headers, source, and attachments. On main, verify subject, body, and link hosts in the browser; use the API for attachment count, filename, type, size, and SHA-256 assertions.
-- **Bring asynchronous email into your tests.** On main, capture a delivery cursor, trigger your application, wait for a specific test run's messages, and clean up only that run.
+- **Inspect mail and check expectations.** View HTML, text, headers, source, and attachments. Verify subject, body, and link hosts in the browser; use the API for attachment count, filename, type, size, and SHA-256 assertions.
+- **Bring asynchronous email into your tests.** Capture a delivery cursor, trigger your application, wait for a specific test run's messages, and clean up only that run.
 - **Give agents a read-only inbox.** MCP provides search, retrieval, and bounded delivery waits. OwlMail itself requires no LLM.
-- **Understand downstream delivery.** Use Webhooks or manual and automatic SMTP Relay. The main-branch UI shows delivery outcomes, attempts, and failure categories.
+- **Understand downstream delivery.** Use Webhooks or manual and automatic SMTP Relay. The UI shows delivery outcomes, attempts, and failure categories.
 - **Add operations features when you need them.** Local EML persistence, recovery, and quarantine; optional SQLite indexing, S3 attachment storage, Redis Streams, and Prometheus metrics.
 
 ## Choose a version
 
-The Docker quick start below uses stable **0.10.1** for SMTP capture, the Web UI, REST, MCP, and Webhooks.
+The Docker quick start below uses stable **0.11.0** for SMTP capture, browser verification, cursor-based tests, read-only MCP, and delivery diagnostics.
 
-**The command palette, Verify / Deliveries, cursor / run_id workflows, doctor, and configuration-aware health checks are implemented on `main`, but are not included in the original `v0.10.1` release tag.** Build from source using [the main-branch instructions](#try-the-current-main-branch) to use them. `main` and `latest` are moving tags; pin a release or image digest for repeatable CI.
+All workflows below are available in **0.11.0**. Pin a release or image digest for repeatable CI; `main` and `latest` are moving development tags. See [0.11.0 release notes](docs/en/Release-0.11.0.md) and [the previous 0.10.1 release](docs/en/Release-0.10.1.md).
 
 ## Quick start: receive your first email
 
@@ -45,7 +45,10 @@ docker run -d --name owlmail \
   -p 127.0.0.1:1025:1025 \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
-  ghcr.io/soulteary/owlmail:0.10.1
+  ghcr.io/soulteary/owlmail:0.11.0
+
+curl --fail --silent --retry 10 --retry-connrefused --retry-delay 1 \
+  --max-time 2 --output /dev/null http://127.0.0.1:1080/readyz
 ```
 
 Open [http://localhost:1080](http://localhost:1080). Messages are stored in the `owlmail-data` volume; keep mounting it when you recreate the container.
@@ -89,27 +92,9 @@ Open the message in the browser, inspect its body and attachments, or query REST
 curl --fail http://127.0.0.1:1080/api/v1/emails
 ```
 
-Stable also supports dark mode and preview width controls. Lists return paginated results. Reading a native `/api/v1` message does not mark it as read. See the [API reference](docs/en/API-Reference.md) and the running server's [OpenAPI JSON](http://localhost:1080/api/v1/openapi.json) / [YAML](http://localhost:1080/api/v1/openapi.yaml). The [checked-in YAML contract](openapi/openapi.yaml) is available without running a server.
+Dark mode and preview width controls are available in the inbox. Lists return paginated results. Reading a native `/api/v1` message does not mark it as read. See the [API reference](docs/en/API-Reference.md) and the running server's [OpenAPI JSON](http://localhost:1080/api/v1/openapi.json) / [YAML](http://localhost:1080/api/v1/openapi.yaml). The [checked-in YAML contract](openapi/openapi.yaml) is available without running a server.
 
-## Try the current main branch
-
-Build with Docker; no host Go installation is needed. These commands use different host ports so the stable instance can remain running:
-
-```bash
-git clone --branch main --depth 1 https://github.com/soulteary/owlmail.git
-cd owlmail
-docker build -t owlmail:local .
-
-docker run -d --name owlmail-main \
-  -p 127.0.0.1:1026:1025 \
-  -p 127.0.0.1:1081:1080 \
-  -v owlmail-main-data:/app/mail \
-  owlmail:local
-```
-
-Open [http://localhost:1081](http://localhost:1081). This instance's host SMTP port is **1026**. The Python example below uses these ports.
-
-### Inspect and verify in the browser
+## Inspect and verify in the browser
 
 - Switch between HTML, text, headers, and source; inspect attachments and inline images.
 - Check phone, tablet, and desktop layouts at seven preview widths without resetting the preview's scroll position.
@@ -121,9 +106,9 @@ Subject and body assertions are case-sensitive substring checks. Link checks ins
 
 HTML previews use an isolated iframe. Remote images, fonts, and styles are blocked by default and can be loaded explicitly for the selected message.
 
-### Wait, check, and clean up in CI
+## Wait, check, and clean up in CI
 
-This example uses only the Python 3 standard library. Save it as `email-check.py` and run `python3 email-check.py` after starting the main-branch instance above:
+This example uses only the Python 3 standard library. Save it as `email-check.py` and run `python3 email-check.py` after starting the stable instance above:
 
 ```python
 import json
@@ -132,7 +117,7 @@ import uuid
 from email.message import EmailMessage
 from urllib.request import ProxyHandler, Request, build_opener
 
-API = "http://127.0.0.1:1081"
+API = "http://127.0.0.1:1080"
 HTTP = build_opener(ProxyHandler({}))
 RUN_ID = "readme-" + uuid.uuid4().hex
 RECIPIENT = "signup+" + RUN_ID + "@example.test"
@@ -158,7 +143,7 @@ message["To"] = RECIPIENT
 message["Subject"] = "Verify your account"
 message["X-OwlMail-Run-ID"] = RUN_ID
 message.set_content("Your test code is 123456.")
-with smtplib.SMTP("127.0.0.1", 1026, timeout=10) as smtp:
+with smtplib.SMTP("127.0.0.1", 1025, timeout=10) as smtp:
     smtp.send_message(message)
 
 result = api("POST", "/api/v1/emails/wait", {
@@ -219,7 +204,7 @@ A local client can instead use stdio to read an existing mail directory:
 
 The seven MCP tools list, search, retrieve details, read raw source, list attachment metadata, retrieve recent mail, and wait for delivery. HTTP reads the running mailbox directly; stdio reads committed EML files and periodically scans the directory.
 
-An agent can report whether signup mail arrived, extract a link from the message body, and return a browser URL as evidence. MCP exposes no deletion, Relay, or configuration tools. Raw MIME may contain attachment payloads, but there is no dedicated decoded-attachment download tool. On main, pass the cursor returned by list/search to `wait_for_email`; see the [MCP reference](docs/en/MCP-Reference.md) and [test-run contract](docs/en/Delivery-Waits-and-Test-Runs.md).
+An agent can report whether signup mail arrived, extract a link from the message body, and return a browser URL as evidence. MCP exposes no deletion, Relay, or configuration tools. Raw MIME may contain attachment payloads, but there is no dedicated decoded-attachment download tool. Pass the cursor returned by list/search to `wait_for_email`; see the [MCP reference](docs/en/MCP-Reference.md) and [test-run contract](docs/en/Delivery-Waits-and-Test-Runs.md).
 
 ## Send mail events to automation or relay to a real inbox
 
@@ -268,7 +253,7 @@ Download a platform binary from [Releases](https://github.com/soulteary/owlmail/
 Alternatively, install stable with Go 1.27.2+:
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.0
 owlmail -mail-directory ./mail
 ```
 
@@ -304,7 +289,7 @@ log-format: json
 
 This stores mail locally and applies a seven-day retention policy. Add `mail-max-messages` or `mail-max-disk-mb` for capacity limits. Environment variables and CLI flags can override the file. See the [configuration reference](docs/en/Configuration-Reference.md) for every flag, default, and environment alias, and [operations](docs/en/Operations.md) for deployment profiles.
 
-### Diagnose and probe the service (main)
+### Diagnose and probe the service
 
 ```bash
 ./owlmail doctor -config ./owlmail.yaml
@@ -314,7 +299,7 @@ This stores mail locally and applies a seven-day retention policy. Add `mail-max
 
 `doctor` checks configuration and recovery records offline; it does not connect to downstream services or prove runtime availability. `healthcheck` probes the running service, and `--ready` checks cached runtime readiness. The container probe uses the startup configuration snapshot, so you do not need to repeat port and HTTPS settings in its command.
 
-For SMTP-only operation on main, use `-disable-web`; it serves no Web UI, REST, or HTTP MCP. Standalone SMTP-only readiness requires an explicit absolute mail directory. See [operations](docs/en/Operations.md).
+For SMTP-only operation, use `-disable-web`; it serves no Web UI, REST, or HTTP MCP. Standalone SMTP-only readiness requires an explicit absolute mail directory. See [operations](docs/en/Operations.md).
 
 ## Migrate from MailDev or MailCatcher
 
@@ -343,7 +328,7 @@ See the [security model](docs/en/Security-Model.md).
 
 ## Documentation and feedback
 
-- [Stable 0.10.1 release notes](docs/en/Release-0.10.1.md) · [0.10.0 release notes](docs/en/Release-0.10.0.md)
+- [0.11.0 release notes](docs/en/Release-0.11.0.md) · [Previous 0.10.1 release notes](docs/en/Release-0.10.1.md)
 - [Integration testing](docs/en/Integration-Testing.md) · [Sendmail-compatible CLI](docs/en/Sendmail.md)
 - [Configuration reference](docs/en/Configuration-Reference.md)
 - [API and OpenAPI](docs/en/API-Reference.md)

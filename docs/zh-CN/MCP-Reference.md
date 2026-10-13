@@ -1,6 +1,6 @@
 # MCP 参考
 
-OwlMail 0.10.1 通过兼容两个协议时代的 Streamable HTTP 与 `owlmail mcp-stdio`
+OwlMail 0.11.0 通过兼容两个协议时代的 Streamable HTTP 与 `owlmail mcp-stdio`
 提供同一套只读 MCP。MCP 是检查接口，不是邮箱管理 API。
 
 ## Transport
@@ -33,13 +33,13 @@ MCP 规范使用日期作为协议版本。社区常说的“MCP 2.0”和“MCP
 
 | 工具 | 输入 | 结果与限制 |
 |---|---|---|
-| `list_emails` | `from`、`to`、`date_from`、`date_to`、`read`、`sort_by`、`sort_order`、`offset`、`limit`；主分支另支持 `run_id`、`recipient` | 紧凑分页；`limit` 默认 50，范围 1–1000；主分支另返回投递 `cursor` |
+| `list_emails` | `from`、`to`、`date_from`、`date_to`、`read`、`sort_by`、`sort_order`、`offset`、`limit`；支持 `run_id`、`recipient` | 紧凑分页；`limit` 默认 50，范围 1–1000；返回投递 `cursor` |
 | `search_emails` | 必填 `query`，以及列表过滤器 | 在主题、纯文本与 HTML 中不区分大小写搜索 |
 | `get_email` | 必填 `id`，可选 `include_html` | 独立详情；默认省略安全化 HTML |
 | `get_email_source` | 必填 `id`，可选 `max_bytes` | 无损 base64 RFC 5322 source；默认 1 MiB，解码后最大 100 MiB |
 | `list_attachments` | 必填 `id` | 文件名、类型、Content-ID、大小、SHA-256、存储元数据；不返回字节 |
 | `get_latest_email` | 可选 `limit` | 按邮箱顺序返回最新 1–20 个摘要 |
-| `wait_for_email` | 可选 `to`、`subject`、`text`、`timeout_seconds`；主分支另支持 `after`、`run_id`、`recipient` | 省略 `after` 时只匹配调用后的新投递；主分支可从 cursor 重放仍被保留的邮件；默认 30 秒，最长 120 秒 |
+| `wait_for_email` | 可选 `to`、`subject`、`text`、`timeout_seconds`；支持 `after`、`run_id`、`recipient` | 省略 `after` 时只匹配调用后的新投递；可从 cursor 重放仍被保留的邮件；默认 30 秒，最长 120 秒 |
 
 `sort_by` 接受 `time`、`subject`、`from`、`size`；`sort_order` 接受 `asc`、
 `desc`；日期格式为 `YYYY-MM-DD`。每个 wait 过滤器最多 1024 字节；旧版或 stdio
@@ -52,12 +52,12 @@ HTTP 等待消费运行实例的投递事件；stdio 通过约 500 ms 一次的�
 `get_email_source.max_bytes` 计算解码后字节，因此返回的 base64 JSON 更大。结果包含
 `returned_bytes`、完整 `size` 与 `truncated`。
 
-主分支的 cursor 流程按“列表/搜索取得 cursor → 触发应用 → 使用 `after` 等待”执行。
+cursor 流程按“列表/搜索取得 cursor → 触发应用 → 使用 `after` 等待”执行。
 `recipient` 匹配完整 SMTP 信封收件人，区分大小写；不是可见 To 头的子串匹配。
 cursor 仅当前进程有效。MCP 等待一封邮件，返回 `matched`、`timed_out` 和匹配时的
 单个 `email` 摘要；它不接受 REST wait 的 `count`，也不返回复数 `emails`。
 客户端必须检查这些结果字段，不能只检查工具调用成功。
-这些参数不属于原 `v0.10.1`；完整限制见
+这些 cursor 参数从 0.11.0 起可用；完整限制见
 [投递等待与测试运行契约](../en/Delivery-Waits-and-Test-Runs.md)。
 
 ## 资源

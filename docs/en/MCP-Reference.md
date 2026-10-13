@@ -1,10 +1,6 @@
 # MCP reference
 
-This reference describes the current main branch. Stable 0.10.1 already exposes
-the seven read-only tools through dual-era Streamable HTTP and through
-`owlmail mcp-stdio`. The `cursor`, `after`, `run_id`, and exact `recipient`
-workflow below requires main and is absent from the original `v0.10.1` tag.
-MCP is an inspection surface, not a mailbox administration API.
+This reference describes OwlMail **0.11.0**: seven read-only tools over dual-era Streamable HTTP and `owlmail mcp-stdio`, including cursor-aware delivery waits and test-run selectors. MCP is an inspection surface, not a mailbox administration API.
 
 ## Transports
 
@@ -39,13 +35,13 @@ Shutdown waits up to `-mcp-shutdown-timeout` (default `5s`).
 
 | Tool | Inputs | Result and limits |
 |---|---|---|
-| `list_emails` | `from`, `to`, `date_from`, `date_to`, `read`, `sort_by`, `sort_order`, `offset`, `limit`; on main, `run_id`, `recipient` | Compact page; `limit` defaults to 50 and is 1–1000; main also returns a delivery `cursor` |
+| `list_emails` | `from`, `to`, `date_from`, `date_to`, `read`, `sort_by`, `sort_order`, `offset`, `limit`; `run_id`, `recipient` | Compact page; `limit` defaults to 50 and is 1–1000; returns a delivery `cursor` |
 | `search_emails` | required `query`, plus list filters | Case-insensitive subject, plain-text, and HTML search |
 | `get_email` | required `id`, optional `include_html` | Detached detail; sanitized HTML is omitted by default |
 | `get_email_source` | required `id`, optional `max_bytes` | Lossless base64 RFC 5322 source; default 1 MiB, maximum 100 MiB decoded bytes |
 | `list_attachments` | required `id` | Filename, content type, content ID, size, SHA-256, and storage metadata; no bytes |
 | `get_latest_email` | optional `limit` | One to 20 newest compact summaries in mailbox order |
-| `wait_for_email` | optional `to`, `subject`, `text`, `timeout_seconds`; on main, `after`, `run_id`, `recipient` | Without `after`, new delivery only; with `after`, replays retained matches after the cursor before waiting; default 30 seconds, maximum 120 seconds |
+| `wait_for_email` | optional `to`, `subject`, `text`, `timeout_seconds`; `after`, `run_id`, `recipient` | Without `after`, new delivery only; with `after`, replays retained matches after the cursor before waiting; default 30 seconds, maximum 120 seconds |
 
 `sort_by` accepts `time`, `subject`, `from`, or `size`; `sort_order` accepts
 `asc` or `desc`. Date filters use `YYYY-MM-DD`. Every wait filter is limited to
@@ -53,7 +49,7 @@ Shutdown waits up to `-mcp-shutdown-timeout` (default `5s`).
 request has an independent quota scope, while the process-wide limit remains
 64 waits.
 
-On main, capture a `cursor` from `list_emails` or `search_emails` before triggering
+Capture a `cursor` from `list_emails` or `search_emails` before triggering
 application mail. Pass it as `after` to `wait_for_email` with the exact,
 case-sensitive SMTP envelope `recipient` and optional `run_id`. `after` cannot
 be combined with substring `to`. Cursors expire when the mailbox process

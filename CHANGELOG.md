@@ -6,7 +6,7 @@ All notable changes to OwlMail are documented in this file. The format follows
 
 ## [Unreleased]
 
-Changes below follow `main` and are not part of the original `v0.10.1` tag.
+## [0.11.0] - 2026-10-13
 
 ### Added
 
@@ -581,7 +581,8 @@ Changes below follow `main` and are not part of the original `v0.10.1` tag.
 Earlier release notes remain available on the
 [GitHub Releases page](https://github.com/soulteary/owlmail/releases).
 
-[Unreleased]: https://github.com/soulteary/owlmail/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/soulteary/owlmail/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/soulteary/owlmail/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/soulteary/owlmail/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/soulteary/owlmail/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/soulteary/owlmail/compare/v0.8.0...v0.9.0

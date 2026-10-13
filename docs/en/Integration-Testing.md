@@ -12,7 +12,7 @@ other's mail.
 docker run --rm -d --name owlmail-test \
   -p 127.0.0.1:1025:1025 \
   -p 127.0.0.1:1080:1080 \
-  ghcr.io/soulteary/owlmail:0.10.1
+  ghcr.io/soulteary/owlmail:0.11.0
 
 for attempt in $(seq 1 30); do
   if curl --fail --silent --connect-timeout 2 --max-time 3 \
@@ -33,13 +33,9 @@ cryptographically fixed image should replace the tag with the manifest form
 `ghcr.io/soulteary/owlmail@sha256:<digest>` recorded during release
 verification.
 
-The original 0.10.1 release's readiness checks enabled S3 attachment storage;
-it does not verify local storage or outgoing SMTP. Confirm ingress with a real
-test message. Current main adds those readiness checks plus cursor-based waits,
-test-run selectors, and the `/check` assertion endpoint. Build main to use the
-flow below; it cannot run against the pinned stable image above.
+OwlMail **0.11.0** includes local storage and outgoing readiness, cursor-based waits, test-run selectors, and `/check` assertions. All flows below run against the pinned stable instance above. Confirm ingress with a real test message.
 
-## Deterministic test flow
+## Bounded polling flow
 
 1. Generate a collision-resistant recipient such as
    `signup+<test-run-id>@example.test`.
@@ -63,7 +59,7 @@ The collection response contains `total`, `limit`, `offset`, and `emails`.
 An empty result is not a delivery failure until the test's own deadline has
 expired. Prefer bounded retry with a short interval over a fixed sleep.
 
-## Cursor-based flow on main
+## Recommended cursor-based flow
 
 1. Obtain `GET /api/v1/emails/cursor` **before** triggering application mail.
 2. Send mail with a unique `X-OwlMail-Run-ID` and exact SMTP envelope recipient.
@@ -80,7 +76,7 @@ Cursors expire on process restart. Test-run IDs are selectors, not tenant
 authorization. The [delivery wait contract](./Delivery-Waits-and-Test-Runs.md)
 defines count limits, quotas, pending Relay protection, and bounded cleanup.
 The [README example](../../README.md#wait-check-and-clean-up-in-ci) shows a
-complete main-branch test with Python's standard library.
+complete stable-release test with Python's standard library.
 
 ## Isolation choices
 
@@ -102,7 +98,7 @@ belonging to other tests. Reading a native v1 email does not mark it as read.
 | API is ready but no message appears | Application SMTP logs, envelope recipient, and query filters |
 | A test finds another test's message | Use a unique recipient and avoid subject-only matching |
 | HTML assertion differs | Assert sanitized HTML, or use `/source` when exact RFC 5322 bytes matter |
-| Intermittent timeout | On main, capture a cursor before triggering; for stable live MCP waits, register the wait concurrently before the trigger; bound every REST poll |
+| Intermittent timeout | Capture a cursor before triggering; for live MCP waits without a cursor, register the wait concurrently before the trigger; bound every REST poll |
 
 Runnable dependency-free examples for JavaScript, Go, and Python are in
 [examples/testing](../../examples/testing/README.md). For exact routes and

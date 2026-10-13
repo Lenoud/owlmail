@@ -2,9 +2,8 @@
 
 [English](../en/Configuration-Reference.md) · [简体中文](./Configuration-Reference.md)
 
-本页列出当前主分支的参数、环境变量别名和内置默认值。`-disable-web` 需要主分支，
-原 `v0.10.1` 不包含 SMTP-only 模式。将开发分支命令用于正式版前，先查看
-[README 版本说明](../../README.zh-CN.md#选择版本)。
+本页列出 OwlMail **0.11.0** 的参数、环境变量别名和内置默认值，包括 `-disable-web` SMTP-only 模式。安装方式见
+[README 快速开始](../../README.zh-CN.md#快速开始收到第一封邮件)。
 
 ## 配置优先级
 

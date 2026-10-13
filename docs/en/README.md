@@ -30,10 +30,10 @@ Welcome to the OwlMail documentation directory. This directory contains technica
 
 - **[Delivery Waits and Test Runs](./Delivery-Waits-and-Test-Runs.md)**
   - Capture a cursor before triggering mail, wait for exact run/recipient matches,
-    and clean up one test run. Requires the post-0.10.1 source tree.
+    and clean up one test run. Available in 0.11.0.
 - **[Verification and Delivery Status](./Email-Verification-UI.md)**
   - Verify captured content and inspect or retry failed deliveries in the mailbox.
-    Requires the post-0.10.1 source tree.
+    Available in 0.11.0.
 - **[Browser and Container Regression Checks](./Browser-Regression-Testing.md)**
   - Run the live browser suite and validate packaged healthcheck behavior.
 
@@ -58,11 +58,11 @@ Welcome to the OwlMail documentation directory. This directory contains technica
   - Component ownership, data flow, single-instance boundaries, trust model, and deployment checklist.
   - **Other languages**: [架构](../zh-CN/Architecture.md) | [安全模型](../zh-CN/Security-Model.md)
 
-- **[OwlMail 0.10.1 Release Notes](./Release-0.10.1.md) · [0.10.0 release notes](./Release-0.10.0.md)**
+- **[OwlMail 0.11.0 Release Notes](./Release-0.11.0.md) · [0.10.1 release notes](./Release-0.10.1.md)**
   - Highlights, upgrade-sensitive behavior, installation commands, asset names,
     known limitations, and links to the detailed references.
-  - **Other languages**: [简体中文](../zh-CN/Release-0.10.1.md)
-  - **Previous release**: [0.9.0](./Release-0.9.0.md) ([简体中文](../zh-CN/Release-0.9.0.md))
+  - **Other languages**: [简体中文](../zh-CN/Release-0.11.0.md)
+  - **Previous release**: [0.10.1](./Release-0.10.1.md) ([简体中文](../zh-CN/Release-0.10.1.md))
 
 - **[API Reference](./API-Reference.md)**
   - Complete route inventory, request/response conventions, authentication,

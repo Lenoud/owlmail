@@ -57,9 +57,9 @@ Ereignisse und AI Agents eine begrenzte, schreibgeschützte MCP-Schnittstelle.
   erstellen und Altprogramme über den [Sendmail-Leitfaden](./docs/de/Sendmail.md)
   anbinden. Quell- und Browsertests verwenden Bun; die Binärdatei benötigt keine Laufzeit.
 
-## OwlMail 0.10.1
+## OwlMail 0.11.0
 
-`v0.10.1` ist die aktuelle stabile Wartungsversion. Sie behebt ein Start-/Stopp-Rennen des SMTP-Listeners und aktualisiert Go auf 1.27.2 sowie Kits und Abhängigkeiten. APIs, Speicherformate und die Schutzmaßnahmen aus 0.10.0 bleiben erhalten. [Release Notes](./docs/en/Release-0.10.1.md) · [0.10.0 release notes](./docs/en/Release-0.10.0.md).
+`v0.11.0` ist die aktuelle stabile Version. Sie enthält Cursor-basierte Zustelltests, Inhalts- und Anhangsprüfungen, Zustellhistorie und bestätigte Wiederholungen, eine Befehlspalette, Offline-Diagnose und SMTP-only mit konfigurationsabhängigen Probes. [Versionshinweise 0.11.0](./docs/en/Release-0.11.0.md) · [Vorherige Version 0.10.1](./docs/en/Release-0.10.1.md).
 
 > [!IMPORTANT]
 > OwlMail ist für Entwicklung, Tests, CI und vertrauenswürdige interne Netze
@@ -73,7 +73,7 @@ Ereignisse und AI Agents eine begrenzte, schreibgeschützte MCP-Schnittstelle.
 
 ```bash
 # Repository klonen
-git clone --branch v0.10.1 --depth 1 https://github.com/soulteary/owlmail.git
+git clone --branch v0.11.0 --depth 1 https://github.com/soulteary/owlmail.git
 cd owlmail
 
 # Kompilieren
@@ -86,7 +86,7 @@ go build -o owlmail ./cmd/owlmail
 #### Mit Go installieren
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.0
 owlmail
 ```
 
@@ -128,8 +128,8 @@ Authentifizierung annimmt. Alle Beispiele unten verwenden die Loopback-Form.
 Der einfachste Weg, OwlMail zu verwenden, ist das Abrufen des vorgefertigten Images von GitHub Container Registry:
 
 ```bash
-# Release 0.10.1 abrufen
-docker pull ghcr.io/soulteary/owlmail:0.10.1
+# Release 0.11.0 abrufen
+docker pull ghcr.io/soulteary/owlmail:0.11.0
 
 # Image für einen exakten Commit abrufen (Beispiel)
 docker pull ghcr.io/soulteary/owlmail:sha-8d3445d
@@ -140,11 +140,11 @@ docker run -d \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
   --name owlmail \
-  ghcr.io/soulteary/owlmail:0.10.1
+  ghcr.io/soulteary/owlmail:0.11.0
 ```
 
 **Verfügbare Tags:**
-- `0.10.1` - Exaktes Release-Tag; `0.10` und `0` werden mit späteren Releases der Reihe aktualisiert
+- `0.11.0` - Exaktes Release-Tag; `0.11` und `0` werden mit späteren Releases der Reihe aktualisiert
 - `sha-<commit>` - Image für einen bestimmten kurzen Commit-SHA (z. B. `sha-8d3445d`)
 - `main` - Veränderliches Image des neuesten `main`-Builds
 - `latest` - Veränderliches Standard-Branch-Image, kein stabiles Release-Tag
@@ -195,7 +195,7 @@ docker buildx build \
 
 ## 📖 Konfigurationsoptionen
 
-Die Tabelle beschreibt auch aktuelle `main`-Optionen. `-disable-web` ist nicht im oben installierten `v0.10.1` enthalten; siehe [Versionswahl](./README.md#choose-a-version) und [Konfigurationsreferenz](./docs/en/Configuration-Reference.md).
+Diese Tabelle beschreibt OwlMail 0.11.0 einschließlich `-disable-web`. Siehe [Versionswahl](./README.md#choose-a-version) und [Konfigurationsreferenz](./docs/en/Configuration-Reference.md).
 
 ### Befehlszeilenargumente
 
@@ -695,7 +695,7 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE)-Da
 
 ## 📚 Verwandte Dokumentation
 
-- [Versionshinweise zu OwlMail 0.10.1](./docs/en/Release-0.10.1.md) ([中文](./docs/zh-CN/Release-0.10.1.md))
+- [Versionshinweise zu OwlMail 0.11.0](./docs/en/Release-0.11.0.md) ([中文](./docs/zh-CN/Release-0.11.0.md))
 - [Integration, CI und AI-Agenten](./docs/en/Integration-Testing.md) ([中文](./docs/zh-CN/Integration-Testing.md))
 - [MCP-Referenz](./docs/en/MCP-Reference.md), [Architektur](./docs/en/Architecture.md) und [Sicherheitsmodell](./docs/en/Security-Model.md)
 - [Ausführbare Testbeispiele](./examples/testing/README.md)

@@ -24,17 +24,17 @@ OwlMail 以一个内嵌 Web 界面的 Go 可执行文件运行，提供 Docker �
 
 ## 为什么使用 OwlMail
 
-- **看到邮件，也能验证结果。** 查看 HTML、文本、Header、源码和附件；主分支可在浏览器验证主题、正文和链接域名，也可通过 API 验证附件数量、文件名、类型、大小和 SHA-256。
-- **让异步邮件进入测试流程。** 当前主分支支持先记录投递游标，再触发业务、等待指定测试运行的邮件，最后只清理本次测试的数据。
+- **看到邮件，也能验证结果。** 查看 HTML、文本、Header、源码和附件；在浏览器验证主题、正文和链接域名，也可通过 API 验证附件数量、文件名、类型、大小和 SHA-256。
+- **让异步邮件进入测试流程。** 先记录投递游标，再触发业务、等待指定测试运行的邮件，最后只清理本次测试的数据。
 - **给 Agent 一个只读邮箱。** MCP 支持搜索、读取和有界等待；OwlMail 本身不依赖 LLM。
-- **发现问题后查得到投递过程。** 支持 Webhook 与手动、自动 Relay；当前主分支的界面可查看尝试次数、失败类别和投递记录。
+- **发现问题后查得到投递过程。** 支持 Webhook 与手动、自动 Relay；界面可查看尝试次数、失败类别和投递记录。
 - **按需要增加部署能力。** 本地 EML 持久化、恢复与隔离；可选 SQLite 查询索引、S3 附件存储、Redis Streams 和 Prometheus 指标。
 
 ## 选择版本
 
-下面的 Docker 快速开始使用正式版 **0.10.1**，适合先体验邮件捕获、Web 界面、REST、MCP 和 Webhook。
+下面的 Docker 快速开始使用正式版 **0.11.0**，可以直接体验邮件捕获、浏览器验证、cursor 测试、只读 MCP 和投递诊断。
 
-**命令面板、Verify / Deliveries、cursor / run_id、doctor 和配置感知健康检查已在 `main` 实现，尚不包含在原 `v0.10.1` 发布标签中。** 要使用这些功能，请按[主分支体验](#体验当前主分支)构建。`main`、`latest` 是移动标签；固定 CI 环境使用明确的发布版本或镜像 digest。
+下文的完整工作流均已包含在 **0.11.0**。固定 CI 环境使用明确的发布版本或镜像 digest；`main`、`latest` 是移动的开发标签。参见 [0.11.0 发布说明](docs/zh-CN/Release-0.11.0.md)和[上一版 0.10.1](docs/zh-CN/Release-0.10.1.md)。
 
 ## 快速开始：收到第一封邮件
 
@@ -45,7 +45,10 @@ docker run -d --name owlmail \
   -p 127.0.0.1:1025:1025 \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
-  ghcr.io/soulteary/owlmail:0.10.1
+  ghcr.io/soulteary/owlmail:0.11.0
+
+curl --fail --silent --retry 10 --retry-connrefused --retry-delay 1 \
+  --max-time 2 --output /dev/null http://127.0.0.1:1080/readyz
 ```
 
 打开 [http://localhost:1080](http://localhost:1080)。邮件保存到 `owlmail-data` 卷，重建容器时继续挂载该卷即可保留数据。
@@ -89,27 +92,9 @@ MAIL
 curl --fail http://127.0.0.1:1080/api/v1/emails
 ```
 
-正式版也支持暗色主题和预览宽度控制。列表返回分页结果。读取原生 `/api/v1` 邮件详情不会自动标记为已读。完整接口见 [API 参考](docs/zh-CN/API-Reference.md)；服务提供 [OpenAPI JSON](http://localhost:1080/api/v1/openapi.json) / [YAML](http://localhost:1080/api/v1/openapi.yaml)，也可直接读取仓库中的 [YAML 合约](openapi/openapi.yaml)。
+界面支持暗色主题和预览宽度控制。列表返回分页结果。读取原生 `/api/v1` 邮件详情不会自动标记为已读。完整接口见 [API 参考](docs/zh-CN/API-Reference.md)；服务提供 [OpenAPI JSON](http://localhost:1080/api/v1/openapi.json) / [YAML](http://localhost:1080/api/v1/openapi.yaml)，也可直接读取仓库中的 [YAML 合约](openapi/openapi.yaml)。
 
-## 体验当前主分支
-
-使用 Docker 构建，不需要在宿主机安装 Go。以下示例使用另一组本机端口，可以与上面的正式版同时运行：
-
-```bash
-git clone --branch main --depth 1 https://github.com/soulteary/owlmail.git
-cd owlmail
-docker build -t owlmail:local .
-
-docker run -d --name owlmail-main \
-  -p 127.0.0.1:1026:1025 \
-  -p 127.0.0.1:1081:1080 \
-  -v owlmail-main-data:/app/mail \
-  owlmail:local
-```
-
-打开 [http://localhost:1081](http://localhost:1081)。此实例的应用 SMTP 端口是 **1026**。后续 Python 示例使用这组端口。
-
-### 在浏览器中检查邮件
+## 在浏览器中检查邮件
 
 - 在 HTML、文本、Header 和源码之间切换，查看附件和内联图片。
 - 用七种预览宽度检查手机、平板和桌面布局；切换宽度保留预览滚动位置。
@@ -121,9 +106,9 @@ docker run -d --name owlmail-main \
 
 HTML 预览使用隔离 iframe，远程图片、字体和样式默认阻止，需要时可对当前邮件手动加载。
 
-### 在 CI 中等待、验证和清理
+## 在 CI 中等待、验证和清理
 
-下面使用 Python 3 标准库完成一个测试，不需要额外安装依赖。保存为 `email-check.py`，在上述主分支实例启动后运行 `python3 email-check.py`：
+下面使用 Python 3 标准库完成一个测试，不需要额外安装依赖。保存为 `email-check.py`，在上述正式版实例启动后运行 `python3 email-check.py`：
 
 ```python
 import json
@@ -132,7 +117,7 @@ import uuid
 from email.message import EmailMessage
 from urllib.request import ProxyHandler, Request, build_opener
 
-API = "http://127.0.0.1:1081"
+API = "http://127.0.0.1:1080"
 HTTP = build_opener(ProxyHandler({}))
 RUN_ID = "readme-" + uuid.uuid4().hex
 RECIPIENT = "signup+" + RUN_ID + "@example.test"
@@ -158,7 +143,7 @@ message["To"] = RECIPIENT
 message["Subject"] = "Verify your account"
 message["X-OwlMail-Run-ID"] = RUN_ID
 message.set_content("Your test code is 123456.")
-with smtplib.SMTP("127.0.0.1", 1026, timeout=10) as smtp:
+with smtplib.SMTP("127.0.0.1", 1025, timeout=10) as smtp:
     smtp.send_message(message)
 
 result = api("POST", "/api/v1/emails/wait", {
@@ -219,7 +204,7 @@ MCP 默认关闭。下面是独立的二进制部署示例。先按[二进制安
 
 MCP 的七个工具支持列表、搜索、详情、原始源码、附件元数据、最新邮件和等待投递。HTTP 模式直接读取运行实例；stdio 模式读取已提交 EML，并定期扫描目录。
 
-Agent 可以返回注册邮件是否到达、正文中的验证链接及浏览器查看地址。MCP 不提供删除、Relay 或配置修改；原始 MIME 可能包含附件载荷，但没有独立的解码附件下载工具。主分支可用列表 / 搜索返回的 cursor 配合 `wait_for_email`，具体参数见 [MCP 参考](docs/zh-CN/MCP-Reference.md)和[测试运行契约](docs/en/Delivery-Waits-and-Test-Runs.md)。
+Agent 可以返回注册邮件是否到达、正文中的验证链接及浏览器查看地址。MCP 不提供删除、Relay 或配置修改；原始 MIME 可能包含附件载荷，但没有独立的解码附件下载工具。使用列表 / 搜索返回的 cursor 配合 `wait_for_email`，具体参数见 [MCP 参考](docs/zh-CN/MCP-Reference.md)和[测试运行契约](docs/en/Delivery-Waits-and-Test-Runs.md)。
 
 ## 把邮件接入自动化或转发到真实邮箱
 
@@ -268,7 +253,7 @@ Agent 可以返回注册邮件是否到达、正文中的验证链接及浏览�
 也可以使用 Go 1.27.2+ 安装正式版：
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.0
 owlmail -mail-directory ./mail
 ```
 
@@ -304,7 +289,7 @@ log-format: json
 
 该配置保存本地邮件，并按七天保留策略清理。设置 `mail-max-messages` 或 `mail-max-disk-mb` 可进一步控制容量。环境变量和命令行可以覆盖文件配置；全部参数、默认值和环境变量别名见[配置参考](docs/zh-CN/Configuration-Reference.md)，部署方式见[运维指南](docs/zh-CN/Operations.md)。
 
-### 诊断与健康检查（main）
+### 诊断与健康检查
 
 ```bash
 ./owlmail doctor -config ./owlmail.yaml
@@ -314,7 +299,7 @@ log-format: json
 
 `doctor` 做离线配置和恢复记录检查，不连接下游，也不证明服务可用。`healthcheck` 检查正在运行的服务；`--ready` 检查缓存的运行时就绪状态。容器内置探针使用启动配置快照，不要求你把端口和 HTTPS 设置再写一遍。
 
-只需要 SMTP 时，可在主分支使用 `-disable-web`；它不会提供 Web、REST 或 HTTP MCP。SMTP-only 的独立 readiness 探针需要明确的绝对邮件目录，见[运维指南](docs/en/Operations.md)。
+只需要 SMTP 时，可使用 `-disable-web`；它不会提供 Web、REST 或 HTTP MCP。SMTP-only 的独立 readiness 探针需要明确的绝对邮件目录，见[运维指南](docs/en/Operations.md)。
 
 ## 从 MailDev 或 MailCatcher 迁移
 
@@ -343,7 +328,7 @@ OwlMail 面向开发、CI 和受控测试网络。它保存完整邮件，可能
 
 ## 文档与反馈
 
-- [0.10.1 正式版发布说明](docs/zh-CN/Release-0.10.1.md) · [0.10.0 发布说明](docs/zh-CN/Release-0.10.0.md)
+- [0.11.0 发布说明](docs/zh-CN/Release-0.11.0.md) · [上一版 0.10.1 发布说明](docs/zh-CN/Release-0.10.1.md)
 - [集成测试](docs/zh-CN/Integration-Testing.md) · [Sendmail 兼容 CLI](docs/zh-CN/Sendmail.md)
 - [配置参考](docs/zh-CN/Configuration-Reference.md)
 - [API 与 OpenAPI](docs/zh-CN/API-Reference.md)

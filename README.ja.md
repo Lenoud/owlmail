@@ -56,9 +56,9 @@ REST API と OpenAPI、自動化は永続イベント、AI Agent は境界が明
   プログラムは [sendmail ガイド](./docs/ja/Sendmail.md)を参照できます。ソースと
   ブラウザテストは Bun を使用しますが、配布バイナリの実行には不要です。
 
-## OwlMail 0.10.1
+## OwlMail 0.11.0
 
-`v0.10.1` は現在の安定メンテナンスリリースです。SMTP リスナーの起動・停止時の競合を修正し、Go 1.27.2、kit と依存関係を更新しました。API、保存形式、0.10.0 の安全対策は維持されます。[リリースノート](./docs/en/Release-0.10.1.md) · [0.10.0 release notes](./docs/en/Release-0.10.0.md)。
+`v0.11.0` は現在の安定版です。カーソルによる配信テスト、本文と添付の検証、配信履歴と確認付き再試行、コマンドパレット、オフライン診断、設定に対応したヘルスチェックと SMTP-only を提供します。[0.11.0 リリースノート](./docs/en/Release-0.11.0.md) · [前のバージョン 0.10.1](./docs/en/Release-0.10.1.md)。
 
 > [!IMPORTANT]
 > OwlMail は開発、テスト、CI、信頼できる内部ネットワーク向けです。公開本番
@@ -72,7 +72,7 @@ REST API と OpenAPI、自動化は永続イベント、AI Agent は境界が明
 
 ```bash
 # Clone repository
-git clone --branch v0.10.1 --depth 1 https://github.com/soulteary/owlmail.git
+git clone --branch v0.11.0 --depth 1 https://github.com/soulteary/owlmail.git
 cd owlmail
 
 # Build
@@ -85,7 +85,7 @@ go build -o owlmail ./cmd/owlmail
 #### Install with Go
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.10.1
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.0
 owlmail
 ```
 
@@ -127,8 +127,8 @@ export MAILDEV_WEB_PORT=1080
 OwlMail を使用する最も簡単な方法は、GitHub Container Registry から事前に構築されたイメージを取得することです：
 
 ```bash
-# リリース 0.10.1 を取得
-docker pull ghcr.io/soulteary/owlmail:0.10.1
+# リリース 0.11.0 を取得
+docker pull ghcr.io/soulteary/owlmail:0.11.0
 
 # 特定コミットのイメージを取得（例）
 docker pull ghcr.io/soulteary/owlmail:sha-8d3445d
@@ -139,11 +139,11 @@ docker run -d \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
   --name owlmail \
-  ghcr.io/soulteary/owlmail:0.10.1
+  ghcr.io/soulteary/owlmail:0.11.0
 ```
 
 **利用可能なタグ：**
-- `0.10.1` - 正確なリリースタグ。`0.10` と `0` は同じ系列の後続リリースで更新
+- `0.11.0` - 正確なリリースタグ。`0.11` と `0` は同じ系列の後続リリースで更新
 - `sha-<commit>` - 特定の短いコミット SHA のイメージ（例：`sha-8d3445d`）
 - `main` - 最新の `main` ビルドに追随する可変イメージ
 - `latest` - デフォルトブランチに追随する可変イメージで、安定版の指定には使用不可
@@ -194,7 +194,7 @@ docker buildx build \
 
 ## 📖 Configuration Options
 
-この表には現在の `main` のオプションが含まれます。上でインストールした `v0.10.1` に `-disable-web` はありません。[バージョン選択](./README.md#choose-a-version)と[設定リファレンス](./docs/en/Configuration-Reference.md)を参照してください。
+この表は `-disable-web` を含む OwlMail 0.11.0 の設定です。[バージョン選択](./README.md#choose-a-version)と[設定リファレンス](./docs/en/Configuration-Reference.md)を参照してください。
 
 ### Command Line Arguments
 
@@ -689,7 +689,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Related Documentation
 
-- [OwlMail 0.10.1 リリースノート](./docs/en/Release-0.10.1.md) ([中文](./docs/zh-CN/Release-0.10.1.md))
+- [OwlMail 0.11.0 リリースノート](./docs/en/Release-0.11.0.md) ([中文](./docs/zh-CN/Release-0.11.0.md))
 - [統合テスト、CI、AI Agent](./docs/en/Integration-Testing.md) ([中文](./docs/zh-CN/Integration-Testing.md))
 - [MCP リファレンス](./docs/en/MCP-Reference.md)、[アーキテクチャ](./docs/en/Architecture.md)、[セキュリティモデル](./docs/en/Security-Model.md)
 - [実行可能なテスト例](./examples/testing/README.md)

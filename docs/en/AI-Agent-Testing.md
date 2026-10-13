@@ -5,9 +5,7 @@ The agent can wait for delivery, inspect a message, and extract a verification
 code or link without receiving tools that delete, mark, relay, forward, reload,
 or reconfigure the mailbox.
 
-The seven tools and both transports are available in stable 0.10.1. The
-cursor-based workflow below requires current main; the original `v0.10.1`
-release supports only live delivery waits and searching captured messages.
+All seven tools, both transports and the cursor-based workflow below are available in OwlMail **0.11.0**. The original `v0.10.1` supports only live delivery waits and searching captured messages.
 
 ## Choose a transport
 
@@ -51,7 +49,7 @@ retention cleanup.
 
 ## Reliable agent workflow
 
-On main, use a cursor to avoid a race with fast application delivery:
+Use a cursor to avoid a race with fast application delivery:
 
 1. Create a unique recipient and, optionally, an `X-OwlMail-Run-ID` test group.
 2. Call `list_emails` and save its `cursor` before triggering the application.
@@ -74,11 +72,11 @@ result, extract the verification URL from plain text, and return the Web link.
 The built-in `registration_verification_email`, `password_reset_email`, and
 `wait_for_delivery` prompts encode the waiting side of this sequence and assume
 the application trigger runs concurrently: they use the live, new-delivery-only
-wait and do not automatically supply a cursor. That is also the stable 0.10.1
-flow. A strictly serial stable client should trigger first, then use
+wait and do not automatically supply a cursor. That is also the original 0.10.1
+flow. A strictly serial 0.10.1 client should trigger first, then use
 `search_emails` for the unique recipient rather than wait for mail that may
 already have arrived. `get_latest_email` can inspect up to 20 recent messages,
-but the caller must verify the recipient before selecting one. On main, the
+but the caller must verify the recipient before selecting one. In 0.11.0, the
 cursor flow above supports serial triggers. Empty filters are broad; prefer a
 unique recipient to prevent selecting unrelated mail.
 

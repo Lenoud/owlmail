@@ -2,10 +2,8 @@
 
 [English](./Configuration-Reference.md) · [简体中文](../zh-CN/Configuration-Reference.md)
 
-This reference lists the current main branch's flags, environment aliases, and
-built-in defaults. `-disable-web` requires main; the original `v0.10.1` release
-does not include SMTP-only mode. See the [README version guide](../../README.md#choose-a-version)
-before using development-branch commands with a release binary.
+This reference lists OwlMail **0.11.0** flags, environment aliases, and built-in defaults, including `-disable-web` SMTP-only mode. See the
+[README quick start](../../README.md#quick-start-receive-your-first-email) to install that release.
 
 ## Configuration precedence
 

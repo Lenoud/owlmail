@@ -458,6 +458,7 @@ test("English and Chinese API references cover every registered machine-facing r
 test("OpenAPI contract is linked from every translated README", () => {
   const document = JSON.parse(fs.readFileSync(path.join(root, "openapi/openapi.json"), "utf8"));
   assert.equal(document.openapi, "3.1.0");
+  assert.equal(document.info.version, currentVersion, "OpenAPI version differs from VERSION");
   assert.equal(document.jsonSchemaDialect, "https://json-schema.org/draft/2020-12/schema");
 
   const yaml = fs.readFileSync(path.join(root, "openapi/openapi.yaml"), "utf8");
@@ -885,7 +886,8 @@ test("GitHub community files match repository features and supported conventions
         : `${securityTranslationBaseURL}${translatedSecurity}`;
       assert.ok(markdown.includes(`](${destination})`), `${security} does not link ${destination}`);
     }
-    for (const marker of ["0.10.x", "0.9.x", "0.8.x"]) {
+    const currentSeries = `${currentVersion.split(".").slice(0, 2).join(".")}.x`;
+    for (const marker of new Set([currentSeries, "0.10.x", "0.9.x", "0.8.x"])) {
       assert.ok(markdown.includes(marker), `${security} is missing ${marker}`);
     }
   }
@@ -1008,9 +1010,14 @@ test(`${currentVersion} examples are pinned, private by default, persistent, and
       "owlmail-linux-amd64",
       "checksums.txt",
       "checksums.txt.sigstore.json",
+      "owlmail-licenses.tar.gz",
     ]);
     const checksum = releaseCommands.find((command) => command.includes("sha256sum -c -"));
     assert.match(checksum || "", /grep ' owlmail-linux-amd64\$' checksums\.txt \| sha256sum -c -/);
+    const licenseChecksum = releaseCommands.find((command) =>
+      command.includes("owlmail-licenses.tar.gz") && command.includes("sha256sum -c -"));
+    assert.match(licenseChecksum || "", /grep ' owlmail-licenses\.tar\.gz\$' checksums\.txt \| sha256sum -c -/);
+    assert.ok(releaseCommands.includes("tar -xzf owlmail-licenses.tar.gz"));
     assert.ok(releaseCommands.includes("chmod +x owlmail-linux-amd64"));
     assert.ok(releaseCommands.includes("./owlmail-linux-amd64"));
 

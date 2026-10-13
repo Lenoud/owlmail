@@ -40,7 +40,7 @@ in eigenen Verzeichnissen organisiert.
 
 ### Veröffentlichungen
 
-- **[Versionshinweise 0.10.1](../en/Release-0.10.1.md) · [0.10.0 release notes](../en/Release-0.10.0.md)** (English, [中文](../zh-CN/Release-0.10.1.md))
+- **[Versionshinweise 0.11.0](../en/Release-0.11.0.md) · [0.10.1 release notes](../en/Release-0.10.1.md)** (English, [中文](../zh-CN/Release-0.11.0.md))
 - **[Versionshinweise 0.9.0](../en/Release-0.9.0.md)** (English, [中文](../zh-CN/Release-0.9.0.md))
 - **[Veröffentlichungsprozess](../en/Releasing.md)** (English, [中文](../zh-CN/Releasing.md))
 
