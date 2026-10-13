@@ -492,7 +492,7 @@ test(`four-way comparison stays source-pinned and reflects the ${currentVersion}
       "9d4141f42b0acedfa544a306f96a5373ded8c8a3",
       "43e488e2a5692532c131a87d5bd16a973ee8db56",
       "0bbbb233db56b185035ec3d1730228506dbb8f04",
-      "0.11.0",
+      "0.11.1",
       "v1.31.1",
       "MCP",
       "MailCatcher",
@@ -614,8 +614,10 @@ test(`${currentVersion} release documentation and workflow stay connected`, () =
     }
   }
 
-  const previousRelease = changelog.slice(releaseEnd).match(/^## \[(\d+\.\d+\.\d+)\]/m);
-  assert.ok(previousRelease, "CHANGELOG.md does not identify the previous release");
+  // Navigation points to the previous complete release, skipping interrupted publication records.
+  const previousRelease = [...changelog.slice(releaseEnd).matchAll(/^## \[(\d+\.\d+\.\d+)\]([^\n]*)$/gm)]
+    .find(([, , status]) => !status.includes("incomplete publication"));
+  assert.ok(previousRelease, "CHANGELOG.md does not identify the previous complete release");
   const previousReleaseNote = `Release-${previousRelease[1]}.md`;
   for (const navigation of [
     ...translatedReadmes,

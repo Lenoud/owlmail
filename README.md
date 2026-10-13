@@ -32,9 +32,9 @@ OwlMail runs as a single Go executable with an embedded Web UI. Docker images su
 
 ## Choose a version
 
-The Docker quick start below uses stable **0.11.0** for SMTP capture, browser verification, cursor-based tests, read-only MCP, and delivery diagnostics.
+The Docker quick start below uses stable **0.11.1** for SMTP capture, browser verification, cursor-based tests, read-only MCP, and delivery diagnostics.
 
-All workflows below are available in **0.11.0**. Pin a release or image digest for repeatable CI; `main` and `latest` are moving development tags. See [0.11.0 release notes](docs/en/Release-0.11.0.md) and [the previous 0.10.1 release](docs/en/Release-0.10.1.md).
+All workflows below are available in **0.11.1**. Pin a release or image digest for repeatable CI; `main` and `latest` are moving development tags. See [0.11.1 release notes](docs/en/Release-0.11.1.md) and [the previous 0.10.1 release](docs/en/Release-0.10.1.md).
 
 ## Quick start: receive your first email
 
@@ -45,7 +45,7 @@ docker run -d --name owlmail \
   -p 127.0.0.1:1025:1025 \
   -p 127.0.0.1:1080:1080 \
   -v owlmail-data:/app/mail \
-  ghcr.io/soulteary/owlmail:0.11.0
+  ghcr.io/soulteary/owlmail:0.11.1
 
 curl --fail --silent --retry 10 --retry-connrefused --retry-delay 1 \
   --max-time 2 --output /dev/null http://127.0.0.1:1080/readyz
@@ -253,7 +253,7 @@ Download a platform binary from [Releases](https://github.com/soulteary/owlmail/
 Alternatively, install stable with Go 1.27.2+:
 
 ```bash
-go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.0
+go install github.com/soulteary/owlmail/cmd/owlmail@v0.11.1
 owlmail -mail-directory ./mail
 ```
 
@@ -328,7 +328,7 @@ See the [security model](docs/en/Security-Model.md).
 
 ## Documentation and feedback
 
-- [0.11.0 release notes](docs/en/Release-0.11.0.md) · [Previous 0.10.1 release notes](docs/en/Release-0.10.1.md)
+- [0.11.1 release notes](docs/en/Release-0.11.1.md) · [Previous 0.10.1 release notes](docs/en/Release-0.10.1.md)
 - [Integration testing](docs/en/Integration-Testing.md) · [Sendmail-compatible CLI](docs/en/Sendmail.md)
 - [Configuration reference](docs/en/Configuration-Reference.md)
 - [API and OpenAPI](docs/en/API-Reference.md)

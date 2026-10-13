@@ -6,7 +6,11 @@ All notable changes to OwlMail are documented in this file. The format follows
 
 ## [Unreleased]
 
-## [0.11.0] - 2026-10-13
+## [0.11.1] - 2026-10-13
+
+Completes the 0.11 feature release after the 0.11.0 publication was interrupted.
+Application behavior is unchanged from the 0.11.0 source tag. The feature
+changes below are relative to 0.10.1.
 
 ### Added
 
@@ -34,6 +38,12 @@ All notable changes to OwlMail are documented in this file. The format follows
 - Corrected temporary-storage, webhook handoff, and historical Relay comments,
   restored missing documentation links, and aligned Code of Conduct attribution
   with the Contributor Covenant 1.4 text in use.
+
+## [0.11.0] - 2026-10-13 — incomplete publication
+
+The source tag and container image were pushed, but publication was interrupted
+before container signing and binary release creation. Use the complete 0.11.1
+release. The original tag and image remain unchanged.
 
 ## [0.10.1] - 2026-10-11
 
@@ -581,7 +591,8 @@ All notable changes to OwlMail are documented in this file. The format follows
 Earlier release notes remain available on the
 [GitHub Releases page](https://github.com/soulteary/owlmail/releases).
 
-[Unreleased]: https://github.com/soulteary/owlmail/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/soulteary/owlmail/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/soulteary/owlmail/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/soulteary/owlmail/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/soulteary/owlmail/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/soulteary/owlmail/compare/v0.9.0...v0.10.0
