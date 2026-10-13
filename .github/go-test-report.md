@@ -4,30 +4,33 @@
 
 | Metric | Value |
 | --- | --- |
-| Total | 796 |
-| Passed | 793 |
+| Total | 914 |
+| Passed | 911 |
 | Failed | 0 |
 | Skipped | 3 |
-| Coverage | 80.42% |
+| Coverage | 80.60% |
 | Threshold | 0.00% |
 
 ### Packages
 
 | Package | Status | Tests | Failed | Coverage |
 | --- | --- | --- | --- | --- |
-| cmd/owlmail | pass | 46 | 0 | 60.22% |
+| cmd/owlmail | pass | 78 | 0 | 65.62% |
+| examples/faults | pass | 3 | 0 | 55.08% |
 | examples/testing/go | pass | 5 | 0 | N/A |
 | examples/webhooks/receiver | pass | 7 | 0 | 78.85% |
-| internal/api | pass | 244 | 0 | 84.52% |
+| internal/api | pass | 274 | 0 | 85.65% |
 | internal/attachmentstore | pass | 8 | 0 | 85.21% |
 | internal/common | pass | 28 | 0 | 94.20% |
-| internal/config | pass | 52 | 0 | 87.05% |
+| internal/config | pass | 53 | 0 | 90.00% |
+| internal/emailcheck | pass | 7 | 0 | 88.72% |
 | internal/maildev | pass | 10 | 0 | 78.46% |
-| internal/mailserver | pass | 247 | 0 | 81.49% |
-| internal/mcpserver | pass | 15 | 0 | 84.76% |
-| internal/outgoing | pass | 70 | 0 | 83.72% |
+| internal/mailserver | pass | 272 | 0 | 82.72% |
+| internal/mcpserver | pass | 16 | 0 | 84.87% |
+| internal/outgoing | pass | 74 | 0 | 83.82% |
 | internal/sendmail | pass | 11 | 0 | 80.49% |
 | internal/types | pass | 6 | 0 | N/A |
-| internal/webhook | pass | 43 | 0 | 75.12% |
+| internal/webhook | pass | 50 | 0 | 76.59% |
 | openapi | pass | 2 | 0 | 73.91% |
+| scripts/license-bundle | pass | 8 | 0 | 50.81% |
 | web | pass | 2 | 0 | 100.00% |
